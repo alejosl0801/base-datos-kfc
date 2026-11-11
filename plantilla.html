@@ -57,6 +57,8 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 .it b{display:block;font-size:17px}.it small{color:var(--mut);font-size:14px}.it:hover{border-color:var(--red)}
 .bk{flex:1 1 100%;text-align:left;border:0;background:rgba(255,255,255,.2);color:#fff;font-weight:700;font-size:16px;padding:10px 12px;border-radius:10px;cursor:pointer}
 .bar:empty{display:none}
+.ver{position:fixed;right:8px;bottom:8px;background:rgba(29,35,48,.82);color:#fff;font-size:12px;padding:4px 10px;border-radius:999px;z-index:30;pointer-events:none}
+@media print{.ver{display:none}}
 </style>
 </head>
 <body>
@@ -66,7 +68,9 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 </header>
 <div class="count" id="count"></div>
 <main id="main"></main>
+<div class="ver" id="ver"></div>
 <script>
+const APP_V = __VERSION__, APP_F = "__FECHAV__";
 const DATA = __DATOS__;
 </script>
 <script>
@@ -156,6 +160,11 @@ document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset
   const v=e.target.value;if(v.trim())OBS[k]=v;else delete OBS[k];
   clearTimeout(tms[k]);tms[k]=setTimeout(()=>{const ok=saveObs();const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=ok?'✓ guardado':'no se pudo guardar';setTimeout(()=>{el.textContent=''},1800)}},400)});
 route();
+$('#ver').textContent='Versión '+APP_V;
+try{fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
+  const m=t.match(/const APP_V = (\d+)/);
+  if(m&&+m[1]>APP_V&&!sessionStorage.getItem('kfc_rl_'+m[1])){sessionStorage.setItem('kfc_rl_'+m[1],'1');location.replace(location.pathname+'?v='+m[1]+location.hash)}
+}).catch(()=>{})}catch(e){}
 })();
 </script>
 </body>

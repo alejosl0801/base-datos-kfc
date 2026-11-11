@@ -1,7 +1,7 @@
 """Genera index.html (app Base de Datos KFC) a partir de BASE_DATOS_KFC.xlsx, hoja DETALLE.
 Sin precios, sin correos y sin datos de personas. Uso: python build.py
 """
-import json, os, re, datetime, sys
+import json, os, re, datetime, sys, hashlib
 import openpyxl
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +39,13 @@ mtime = datetime.datetime.fromtimestamp(os.path.getmtime(XLSX))
 datos = {'actualizado': mtime.strftime('%d/%m/%Y %H:%M'), 'acc': acc, 'extintores': filas}
 js = json.dumps(datos, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
 
-html = open(PLANTILLA, encoding='utf-8').read().replace('__DATOS__', js)
+plantilla = open(PLANTILLA, encoding='utf-8').read()
+vf = os.path.join(AQUI, 'version.json')
+ver = json.load(open(vf)) if os.path.exists(vf) else {'n': 0, 'hash': ''}
+h = hashlib.sha256((plantilla + js).encode('utf-8')).hexdigest()
+if h != ver['hash']:
+    ver = {'n': ver['n'] + 1, 'hash': h, 'fecha': datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}
+    json.dump(ver, open(vf, 'w'))
+html = plantilla.replace('__DATOS__', js).replace('__VERSION__', str(ver['n'])).replace('__FECHAV__', ver.get('fecha', ''))
 open(SALIDA, 'w', encoding='utf-8').write(html)
-print('OK', len(filas), 'extintores,', len({f[2] for f in filas}), 'locales ->', SALIDA)
+print('Version', ver['n'], '|', 'OK', len(filas), 'extintores,', len({f[2] for f in filas}), 'locales ->', SALIDA)
