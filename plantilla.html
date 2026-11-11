@@ -28,6 +28,13 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 .row:nth-child(even):not(.hd){background:var(--zeb)}
 .c{text-align:center}
 .mut{color:var(--mut)}
+.lx{padding:8px 12px;background:#fff8e8;border-top:1px solid var(--line)}
+.acc{display:inline-block;font-weight:700;font-size:14px;margin-bottom:6px}
+.acc b{display:inline-block;min-width:34px;text-align:center;border-radius:8px;padding:1px 9px;margin-left:6px;background:#e5e7eb}
+.acc b.si{background:#d9f2e3;color:#157347}.acc b.no{background:#fbdcdc;color:#a11d1d}.acc b.q{background:#fdecc8;color:#8a5a00}
+.lx label{display:block;font-size:12px;font-weight:700;color:#6b4e00;text-transform:uppercase;margin-bottom:3px}
+.lx textarea{width:100%;min-height:48px;border:1px solid #e0cf9a;border-radius:8px;padding:8px 10px;font:inherit;font-size:15px;resize:vertical;background:#fff}
+.sv{font-size:11px;color:#157347;margin-left:8px;font-weight:600}
 .empty{text-align:center;color:var(--mut);padding:50px 10px;font-size:17px}
 .foot{color:var(--mut);font-size:12px;text-align:center;margin-top:22px}
 .row>.y,.row>.t{display:none}
@@ -40,7 +47,7 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
   .row>.y{grid-area:y;color:var(--mut);font-size:13px;display:block}
   .row>.d{display:none}
 }
-@media print{header{position:static;background:#fff;color:#000;box-shadow:none}.bar{display:none}.loc{break-inside:avoid}.lh{background:#ddd;color:#000}}
+@media print{.lx textarea{border:0;padding:0;background:none;resize:none}header{position:static;background:#fff;color:#000;box-shadow:none}.bar{display:none}.loc{break-inside:avoid}.lh{background:#ddd;color:#000}}
 </style>
 </head>
 <body>
@@ -69,7 +76,11 @@ const tc=s=>SIGLAS.includes(s)?s:String(s).toLowerCase().replace(/(^|[\s\/])([a-
 const $=s=>document.querySelector(s);
 const E=DATA.extintores; // [marca,codigo,nombre,mes,ubic,tipo,cap,ult,m1,m2,prox]
 const locs=[];const idx={};
-E.forEach(r=>{let l=idx[r[2]];if(!l){l=idx[r[2]]={marca:r[0],codigo:r[1],nombre:r[2],mes:r[3],ext:[]};locs.push(l)}
+const KEY='kfc_obs_v1';
+let OBS={};try{OBS=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+const saveObs=()=>{try{localStorage.setItem(KEY,JSON.stringify(OBS));return true}catch(e){return false}};
+const okey=l=>l.codigo==='PENDIENTE'?l.nombre:l.codigo;
+E.forEach(r=>{let l=idx[r[2]];if(!l){l=idx[r[2]]={marca:r[0],codigo:r[1],nombre:r[2],mes:r[3],acc:(DATA.acc||{})[r[2]]||'?',ext:[]};locs.push(l)}
   l.ext.push({u:r[4],t:r[5],c:r[6],y:[r[7],r[8],r[9],r[10]],b:norm([r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]].join(' '))})});
 const marcas=[...new Set(locs.map(l=>l.marca))];
 $('#marca').innerHTML='<option value="">Todas las marcas</option>'+marcas.map(m=>`<option value="${esc(m)}">${esc(tc(m))}</option>`).join('');
@@ -86,16 +97,21 @@ function render(){
     if(!rows.length) continue;
     nl++;ne+=rows.length;
     html+=`<section class="loc"><div class="lh"><span>${esc(l.nombre)}</span><span>${esc(tc(l.marca))} · ${tc(l.mes)}</span></div>
+    <div class="lx"><div class="acc">Acc. distancia:<b class="${l.acc==='SI'?'si':l.acc==='NO'?'no':'q'}">${l.acc==='SI'?'SÍ':l.acc}</b></div><label for="o_${esc(okey(l))}">Observación <span class="sv" data-sv="${esc(okey(l))}"></span></label><textarea id="o_${esc(okey(l))}" data-k="${esc(okey(l))}" placeholder="Escribe aquí una observación para este local…">${esc(OBS[okey(l)]||'')}</textarea></div>
     <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
     rows.map(e=>`<div class="row"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t">${esc(e.t)} ${esc(e.c)}</span><span class="c d">${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b></span></div>`).join('')+`</section>`;
   }
   $('#count').textContent=nl?`${nl} ${nl==1?'local':'locales'} · ${ne} ${ne==1?'extintor':'extintores'}`:'';
-  $('#main').innerHTML=html||'<div class="empty">No encontré nada. Prueba con otra palabra.</div>';
+  $('#main').innerHTML=(html||'<div class="empty">No encontré nada. Prueba con otra palabra.</div>')+'<div class="foot">Las observaciones se guardan en este celular o computadora (no se comparten con otros aparatos).</div>';
 }
 let tm;$('#q').addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(render,120)});
 $('#marca').addEventListener('change',render);$('#mes').addEventListener('change',render);
 $('#clr').addEventListener('click',()=>{$('#q').value='';$('#marca').value='';$('#mes').value='';render();$('#q').focus()});
 $('#prt').addEventListener('click',()=>print());
+const tms={};
+$('#main').addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
+  const v=e.target.value;if(v.trim())OBS[k]=v;else delete OBS[k];
+  clearTimeout(tms[k]);tms[k]=setTimeout(()=>{const ok=saveObs();const el=document.querySelector('[data-sv="'+k.replace(/"/g,'')+'"]');if(el){el.textContent=ok?'✓ guardado':'no se pudo guardar';setTimeout(()=>{el.textContent=''},1800)}},400)});
 render();
 })();
 </script>

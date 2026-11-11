@@ -27,8 +27,16 @@ for r in range(2, d.max_row + 1):
 filas_orden = sorted(range(len(filas)), key=lambda i: (0 if filas[i][0] == 'KFC' else 1, filas[i][0], filas[i][2], i))
 filas = [filas[i] for i in filas_orden]
 
+rs = wb['RESUMEN_LOCALES']
+acc = {}
+for r in range(2, rs.max_row + 1):
+    nom = rs.cell(row=r, column=3).value
+    if nom:
+        v = str(rs.cell(row=r, column=14).value or '?').strip().upper().replace('Í', 'I')
+        acc[str(nom)] = v if v in ('SI', 'NO') else '?'
+
 mtime = datetime.datetime.fromtimestamp(os.path.getmtime(XLSX))
-datos = {'actualizado': mtime.strftime('%d/%m/%Y %H:%M'), 'extintores': filas}
+datos = {'actualizado': mtime.strftime('%d/%m/%Y %H:%M'), 'acc': acc, 'extintores': filas}
 js = json.dumps(datos, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
 
 html = open(PLANTILLA, encoding='utf-8').read().replace('__DATOS__', js)
