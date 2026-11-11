@@ -5,244 +5,97 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#922B21">
 <meta name="robots" content="noindex, nofollow">
-<title>Base de Datos KFC · Extintores</title>
+<title>Listado de extintores · Grupo KFC</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23922B21'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3EK%3C/text%3E%3C/svg%3E">
 <style>
-:root{
-  --red:#922B21; --red-d:#6e1f18; --bg:#f5f6f8; --card:#fff; --ink:#1d2330; --mut:#6b7280; --line:#e3e6ec;
-  --ok:#157347; --ok-bg:#d9f2e3; --warn:#8a5a00; --warn-bg:#fdecc8; --rec:#a11d1d; --rec-bg:#fbdcdc; --info:#1f4e8c; --info-bg:#dce9fb;
-}
+:root{--red:#922B21;--bg:#f4f5f7;--line:#d9dde4;--ink:#1d2330;--mut:#6b7280;--zeb:#f4f8fb}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-header{background:var(--red);color:#fff;padding:10px 14px 0;position:sticky;top:0;z-index:20;box-shadow:0 2px 6px rgba(0,0,0,.2)}
-@media(max-width:700px){header{position:static}.stk{position:sticky;top:0;z-index:20;background:var(--red);margin:0 -14px;padding:0 14px;box-shadow:0 2px 6px rgba(0,0,0,.2)}}
-.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-h1{font-size:17px;margin:0;font-weight:700;flex:1;min-width:0}
-h1 small{display:block;font-weight:400;font-size:12px;opacity:.85}
-.search{display:flex;gap:8px;margin-top:10px}
-.search input{flex:1;border:0;border-radius:10px;padding:11px 14px;font-size:16px;outline:none}
-.btn{border:0;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;background:#fff;color:var(--red)}
-.btn.ghost{background:rgba(255,255,255,.18);color:#fff}
-nav{display:flex;gap:4px;margin-top:10px;overflow-x:auto}
-nav button{flex:1;border:0;background:rgba(255,255,255,.14);color:#fff;padding:9px 12px;border-radius:10px 10px 0 0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
-nav button.on{background:var(--bg);color:var(--red)}
-main{max-width:1200px;margin:0 auto;padding:14px 12px 60px}
-.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
-.filters select{padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:14px;max-width:100%}
-.filters .count{margin-left:auto;color:var(--mut);font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;transition:box-shadow .15s}
-.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.1)}
-.card .t{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
-.code{display:inline-block;background:var(--red);color:#fff;border-radius:7px;padding:2px 8px;font-size:12px;font-weight:700;letter-spacing:.3px}
-.code.pend{background:#b45309}
-.nm{font-weight:700;margin:4px 0 2px}
-.mut{color:var(--mut);font-size:13px}
-.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-.chip{font-size:12px;border-radius:999px;padding:2px 9px;background:#eef0f4;color:#374151;font-weight:600}
-.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
-.chip.rec{background:var(--rec-bg);color:var(--rec)} .chip.info{background:var(--info-bg);color:var(--info)}
-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px}
-th{background:#f0f1f5;font-size:12px;text-transform:uppercase;letter-spacing:.3px;color:#4b5563;position:sticky;top:0}
-td.c,th.c{text-align:center}
-tr:last-child td{border-bottom:0}
-.tw{overflow:auto;max-height:calc(100vh - 230px);border-radius:12px}
-.empty{text-align:center;color:var(--mut);padding:40px 10px}
-.modal{position:fixed;inset:0;background:rgba(15,20,30,.55);display:none;z-index:50;align-items:flex-end;justify-content:center}
-.modal.on{display:flex}
-.sheet{background:var(--bg);width:100%;max-width:900px;max-height:94vh;border-radius:18px 18px 0 0;overflow:auto;padding:16px}
-@media(min-width:760px){.modal{align-items:center}.sheet{border-radius:18px}}
-.sheet h2{margin:0 0 2px;font-size:19px}
-.x{float:right;border:0;background:#e5e7eb;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.kpi b{display:block;font-size:22px}
-.kpi span{color:var(--mut);font-size:12px}
-.sec{margin:16px 0 8px;font-size:14px;font-weight:700;color:var(--red-d);text-transform:uppercase;letter-spacing:.4px}
-.mes{margin-bottom:12px}
-.mes>summary{cursor:pointer;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:8px}
-.mes[open]>summary{border-radius:12px 12px 0 0}
-.mes .in{border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:10px;background:#fafbfc}
-.foot{color:var(--mut);font-size:12px;text-align:center;margin-top:24px}
-mark{background:#ffe27a;border-radius:3px}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{background:var(--red);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+h1{margin:0 0 8px;font-size:19px}
+h1 small{display:block;font-weight:400;font-size:12px;opacity:.85;margin-top:2px}
+.bar{display:flex;gap:8px;flex-wrap:wrap}
+.bar input{flex:1 1 100%;min-width:0;width:100%;border:0;border-radius:10px;padding:13px 14px;font-size:18px;outline:none}
+.bar select,.bar button{flex:1 1 120px;min-width:0;border:0;border-radius:10px;padding:11px 10px;font-size:16px;background:#fff;color:#222}
+.bar button{background:rgba(255,255,255,.2);color:#fff;font-weight:700;cursor:pointer}
+.count{padding:10px 14px 0;color:var(--mut);font-size:14px;max-width:1100px;margin:0 auto}
+main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
+.loc{background:#fff;border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden}
+.lh{background:var(--red);color:#fff;padding:9px 12px;display:flex;justify-content:space-between;gap:10px;font-weight:700;font-size:16px}
+.lh{flex-wrap:wrap}.lh span{min-width:0;overflow-wrap:anywhere}.lh span:last-child{font-weight:500;opacity:.9}
+.row{display:grid;grid-template-columns:2.2fr .8fr .9fr .8fr .8fr .8fr .9fr;gap:6px;padding:7px 12px;align-items:center;border-top:1px solid var(--line);font-size:15px}
+.hd{background:#eceef2;font-size:12px;font-weight:700;color:#4b5563;text-transform:uppercase;border-top:0}
+.row:nth-child(even):not(.hd){background:var(--zeb)}
+.c{text-align:center}
+.mut{color:var(--mut)}
+.empty{text-align:center;color:var(--mut);padding:50px 10px;font-size:17px}
+.foot{color:var(--mut);font-size:12px;text-align:center;margin-top:22px}
+.row>.y,.row>.t{display:none}
 @media(max-width:700px){
-  .stack thead{display:none}
-  .stack,.stack tbody{display:block}
-  .stack tr{display:block;padding:8px 10px;border-bottom:8px solid var(--bg);background:#fff}
-  .stack td{display:flex;justify-content:space-between;gap:10px;border:0;padding:2px 0;text-align:right}
-  .stack td::before{content:attr(data-h);color:var(--mut);font-size:12px;text-align:left;flex:0 0 auto}
-  .stack td.c{text-align:right}
-  .tw{max-height:none}
+  header{position:static}
+  .hd{display:none}
+  .row{grid-template-columns:1fr auto;grid-template-areas:"u t" "y y";gap:2px 8px;padding:9px 12px}
+  .row>.u{grid-area:u;font-weight:600;min-width:0;overflow-wrap:anywhere}
+  .row>.t{grid-area:t;font-weight:700;text-align:right;display:block}
+  .row>.y{grid-area:y;color:var(--mut);font-size:13px;display:block}
+  .row>.d{display:none}
 }
-@media print{
-  header,.filters,.x,nav,.btn{display:none!important}
-  body{background:#fff} .modal.on{position:static;display:block;background:none}
-  .sheet{max-height:none;overflow:visible;padding:0}
-}
+@media print{header{position:static;background:#fff;color:#000;box-shadow:none}.bar{display:none}.loc{break-inside:avoid}.lh{background:#ddd;color:#000}}
 </style>
 </head>
 <body>
 <header>
-  <div class="top">
-    <h1>Base de Datos KFC · Extintores<small id="sub"></small></h1>
-    <button class="btn ghost" id="btnPrint" title="Imprimir o guardar en PDF">Imprimir / PDF</button>
+  <h1>Listado de extintores · Grupo KFC<small id="sub"></small></h1>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Escribe el nombre del local…  ej: Alborada" autocomplete="off">
+    <select id="marca"></select>
+    <select id="mes"></select>
+    <button id="clr">Limpiar</button>
+    <button id="prt">Imprimir</button>
   </div>
- <div class="stk"><div class="search"><input id="q" type="search" placeholder="Buscar local, código, marca, ubicación, tipo…" autocomplete="off"></div>
-  <nav id="tabs">
-    <button data-t="locales" class="on">Locales</button>
-    <button data-t="ext">Extintores</button>
-    <button data-t="mes">Por mes</button>
-    <button data-t="res">Resumen</button>
-  </nav></div>
 </header>
+<div class="count" id="count"></div>
 <main id="main"></main>
-<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
-
 <script>
 const DATA = __DATOS__;
 </script>
 <script>
 (function(){
 const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-const HOY=new Date(), ANIO=HOY.getFullYear(), MES_ACT=HOY.getMonth();
 const norm=s=>String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const cap=s=>!s?s:(s.length<=4&&/^[A-Z]+$/.test(s)&&!MESES.includes(s))?s:s.split(' ').map(w=>w==='/'?w:w[0]+w.slice(1).toLowerCase()).join(' ');
-
-// ---- modelo
-const E=DATA.extintores;            // [marca,codigo,nombre,mes,ubic,tipo,cap,ult,m1,m2,prox]
-const L=new Map();
-E.forEach(r=>{
-  const k=r[2];
-  if(!L.has(k)) L.set(k,{marca:r[0],codigo:r[1],nombre:r[2],mes:r[3],ext:[]});
-  L.get(k).ext.push({ubic:r[4],tipo:r[5],cap:r[6],ult:r[7],m1:r[8],m2:r[9],prox:r[10]});
-});
-const LOC=[...L.values()];
-LOC.forEach(l=>{
-  l.corto=l.nombre.replace(/^[A-Z]{1,3}\d{1,3}\s*-\s*/,'').replace(/^PENDIENTE\s*-\s*/,'');
-  const ciclos=new Set(l.ext.map(e=>e.ult+'-'+e.prox));
-  l.mixto=ciclos.size>1;
-  l.sinUbic=l.ext.filter(e=>!e.ubic).length;
-  const hay=[l.marca,l.codigo,l.nombre,l.mes,...l.ext.map(e=>[e.ubic,e.tipo,e.cap,e.ult,e.m1,e.m2,e.prox].join(' '))].join(' ');
-  l.blob=norm(hay);
-  l.n=l.ext.length;
-  l.pend=l.codigo==='PENDIENTE';
-});
-function estado(e,y){
-  if(e.prox===y) return {t:'Recarga '+y,c:'rec'};
-  if(e.m1===y||e.m2===y) return {t:'Mantenimiento '+y,c:'warn'};
-  if(e.ult===y) return {t:'Recargado '+y,c:'ok'};
-  if(e.prox<y) return {t:'Vencido ('+e.prox+')',c:'rec'};
-  return {t:'Al día',c:'info'};
-}
-function resumenTipos(l){
-  const m={};
-  l.ext.forEach(e=>{const k=e.tipo+' '+e.cap;m[k]=(m[k]||0)+1});
-  return Object.entries(m).sort((a,b)=>a[0].localeCompare(b[0],'es',{numeric:true}));
-}
-
-// ---- estado UI
-const st={tab:'locales',q:'',marca:'',mes:'',tipo:'',prox:''};
+const SIGLAS=['KFC','GUS','CAFA'];
+const tc=s=>SIGLAS.includes(s)?s:String(s).toLowerCase().replace(/(^|[\s\/])([a-záéíóúñ])/g,(m,a,b)=>a+b.toUpperCase());
 const $=s=>document.querySelector(s);
-const marcas=[...new Set(LOC.map(l=>l.marca))].sort((a,b)=>(a==='KFC'?-1:b==='KFC'?1:a.localeCompare(b,'es')));
-const tipos=[...new Set(E.map(r=>r[5]+' '+r[6]))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
-const proxs=[...new Set(E.map(r=>r[10]))].sort();
+const E=DATA.extintores; // [marca,codigo,nombre,mes,ubic,tipo,cap,ult,m1,m2,prox]
+const locs=[];const idx={};
+E.forEach(r=>{let l=idx[r[2]];if(!l){l=idx[r[2]]={marca:r[0],codigo:r[1],nombre:r[2],mes:r[3],ext:[]};locs.push(l)}
+  l.ext.push({u:r[4],t:r[5],c:r[6],y:[r[7],r[8],r[9],r[10]],b:norm([r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]].join(' '))})});
+const marcas=[...new Set(locs.map(l=>l.marca))];
+$('#marca').innerHTML='<option value="">Todas las marcas</option>'+marcas.map(m=>`<option value="${esc(m)}">${esc(tc(m))}</option>`).join('');
+$('#mes').innerHTML='<option value="">Todos los meses</option>'+MESES.map(m=>`<option value="${m}">${tc(m)}</option>`).join('');
+$('#sub').textContent=`${locs.length} locales · ${E.length} extintores · actualizado ${DATA.actualizado}`;
 
-$('#sub').textContent=`${LOC.length} locales · ${E.length} extintores · actualizado ${DATA.actualizado}`;
-
-function filtra(l){
-  const q=norm(st.q).trim();
-  if(q && !q.split(/\s+/).every(w=>l.blob.includes(w))) return false;
-  if(st.marca && l.marca!==st.marca) return false;
-  if(st.mes && l.mes!==st.mes) return false;
-  if(st.tipo && !l.ext.some(e=>e.tipo+' '+e.cap===st.tipo)) return false;
-  if(st.prox && !l.ext.some(e=>String(e.prox)===st.prox)) return false;
-  return true;
+function render(){
+  const words=norm($('#q').value).trim().split(/\s+/).filter(Boolean);
+  const m=$('#marca').value, mes=$('#mes').value;
+  let nl=0,ne=0,html='';
+  for(const l of locs){
+    if(m&&l.marca!==m) continue; if(mes&&l.mes!==mes) continue;
+    const rows=l.ext.filter(e=>words.every(w=>e.b.includes(w)));
+    if(!rows.length) continue;
+    nl++;ne+=rows.length;
+    html+=`<section class="loc"><div class="lh"><span>${esc(l.nombre)}</span><span>${esc(tc(l.marca))} · ${tc(l.mes)}</span></div>
+    <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
+    rows.map(e=>`<div class="row"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t">${esc(e.t)} ${esc(e.c)}</span><span class="c d">${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b></span></div>`).join('')+`</section>`;
+  }
+  $('#count').textContent=nl?`${nl} ${nl==1?'local':'locales'} · ${ne} ${ne==1?'extintor':'extintores'}`:'';
+  $('#main').innerHTML=html||'<div class="empty">No encontré nada. Prueba con otra palabra.</div>';
 }
-function filtros(extra){
-  const o=(arr,sel,ph,fmt)=>`<select data-f="${sel}"><option value="">${ph}</option>${arr.map(v=>`<option value="${esc(v)}" ${String(st[sel])===String(v)?'selected':''}>${esc(fmt?fmt(v):v)}</option>`).join('')}</select>`;
-  return `<div class="filters">${o(marcas,'marca','Todas las marcas')}${o(MESES,'mes','Todos los meses',cap)}${o(tipos,'tipo','Todo tipo / capacidad')}${o(proxs,'prox','Toda próxima recarga')}<button class="btn" style="background:#fff;border:1px solid var(--line)" id="clr">Limpiar</button><span class="count">${extra}</span></div>`;
-}
-function cardLocal(l){
-  const tp=resumenTipos(l).map(([k,n])=>`<span class="chip">${n}× ${esc(k)}</span>`).join('');
-  const ys=[...new Set(l.ext.map(e=>e.prox))].sort();
-  const act=l.ext.map(e=>estado(e,ANIO));
-  const rec=act.filter(a=>a.c==='rec').length, man=act.filter(a=>a.c==='warn').length;
-  let chips='';
-  if(rec) chips+=`<span class="chip rec">${rec} recarga ${ANIO}</span>`;
-  if(man) chips+=`<span class="chip warn">${man} mantenimiento ${ANIO}</span>`;
-  chips+=`<span class="chip info">próx. recarga ${ys.join(' / ')}</span>`;
-  if(l.mixto) chips+=`<span class="chip warn">ciclos distintos</span>`;
-  if(l.sinUbic) chips+=`<span class="chip">${l.sinUbic} sin ubicación</span>`;
-  return `<div class="card" data-l="${esc(l.nombre)}"><div class="t"><span class="code ${l.pend?'pend':''}">${l.pend?'SIN CÓDIGO':esc(l.codigo)}</span><span class="mut">${cap(l.mes)}</span></div>
-  <div class="nm">${esc(l.corto)}</div><div class="mut">${esc(cap(l.marca))} · ${l.n} extintor${l.n>1?'es':''}</div>
-  <div class="chips">${tp}</div><div class="chips">${chips}</div></div>`;
-}
-function vistaLocales(){
-  const r=LOC.filter(filtra);
-  $('#main').innerHTML=filtros(`${r.length} de ${LOC.length} locales`)+(r.length?`<div class="grid">${r.map(cardLocal).join('')}</div>`:'<div class="empty">No hay locales con esos filtros.</div>');
-}
-function vistaExt(){
-  const q=norm(st.q).trim();
-  const rows=[];
-  LOC.filter(filtra).forEach(l=>l.ext.forEach(e=>{
-    if(st.tipo && e.tipo+' '+e.cap!==st.tipo) return;
-    if(st.prox && String(e.prox)!==st.prox) return;
-    if(q){const b=norm([l.marca,l.codigo,l.nombre,l.mes,e.ubic,e.tipo,e.cap,e.ult,e.m1,e.m2,e.prox].join(' ')); if(!q.split(/\s+/).every(w=>b.includes(w))) return;}
-    rows.push([l,e]);
-  }));
-  const body=rows.map(([l,e])=>{const s=estado(e,ANIO);return `<tr data-l="${esc(l.nombre)}" style="cursor:pointer"><td data-h="Marca">${esc(cap(l.marca))}</td><td data-h="Local">${esc(l.nombre)}</td><td data-h="Mes">${cap(l.mes)}</td><td data-h="Ubicación">${esc(e.ubic)||'<span class=mut>—</span>'}</td><td class="c" data-h="Tipo">${esc(e.tipo)}</td><td class="c" data-h="Capacidad">${esc(e.cap)}</td><td class="c" data-h="Últ. recarga">${e.ult}</td><td class="c" data-h="Mant. 1">${e.m1}</td><td class="c" data-h="Mant. 2">${e.m2}</td><td class="c" data-h="Próx. recarga">${e.prox}</td><td data-h="Estado ${ANIO}"><span class="chip ${s.c}">${s.t}</span></td></tr>`}).join('');
-  $('#main').innerHTML=filtros(`${rows.length} extintores`)+(rows.length?`<div class="tw"><table class="stack"><thead><tr><th>Marca</th><th>Local</th><th>Mes</th><th>Ubicación</th><th class="c">Tipo</th><th class="c">Capacidad</th><th class="c">Últ. recarga</th><th class="c">Mant. 1</th><th class="c">Mant. 2</th><th class="c">Próx. recarga</th><th>Estado ${ANIO}</th></tr></thead><tbody>${body}</tbody></table></div>`:'<div class="empty">No hay extintores con esos filtros.</div>');
-}
-function vistaMes(){
-  const r=LOC.filter(filtra);
-  const html=MESES.map((m,i)=>{
-    const ls=r.filter(l=>l.mes===m); if(!ls.length) return '';
-    const n=ls.reduce((a,l)=>a+l.n,0);
-    return `<details class="mes" ${i===MES_ACT||st.q?'open':''}><summary><span>${cap(m)}${i===MES_ACT?' · mes actual':''}</span><span class="mut">${ls.length} locales · ${n} extintores</span></summary><div class="in"><div class="grid">${ls.map(cardLocal).join('')}</div></div></details>`;
-  }).join('');
-  $('#main').innerHTML=filtros(`${r.length} locales`)+(html||'<div class="empty">Sin resultados.</div>');
-}
-function vistaRes(){
-  const cnt=(arr,f)=>{const m={};arr.forEach(x=>{const k=f(x);m[k]=(m[k]||0)+1});return m};
-  const tab=(titulo,m,fm)=>`<div class="sec">${titulo}</div><div class="tw" style="max-height:none"><table><tbody>${Object.entries(m).sort(fm).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="c" style="width:90px"><b>${v}</b></td></tr>`).join('')}</tbody></table></div>`;
-  const porMarcaL=cnt(LOC,l=>cap(l.marca)), porMarcaE=cnt(E,r=>cap(r[0]));
-  const porTipo=cnt(E,r=>r[5]+' '+r[6]), porProx=cnt(E,r=>r[10]), porMes=cnt(LOC,l=>cap(l.mes));
-  const marcaTab=`<div class="sec">Por marca</div><div class="tw" style="max-height:none"><table><thead><tr><th>Marca</th><th class="c">Locales</th><th class="c">Extintores</th></tr></thead><tbody>${marcas.map(m=>`<tr><td>${esc(cap(m))}</td><td class="c">${porMarcaL[cap(m)]}</td><td class="c">${porMarcaE[cap(m)]}</td></tr>`).join('')}</tbody></table></div>`;
-  $('#main').innerHTML=`<div class="kpis"><div class="kpi"><b>${LOC.length}</b><span>Locales</span></div><div class="kpi"><b>${E.length}</b><span>Extintores</span></div><div class="kpi"><b>${marcas.length}</b><span>Marcas</span></div><div class="kpi"><b>${LOC.filter(l=>l.mixto).length}</b><span>Locales con ciclos distintos</span></div><div class="kpi"><b>${E.filter(r=>!r[4]).length}</b><span>Extintores sin ubicación</span></div></div>`
-   +marcaTab
-   +tab('Por tipo y capacidad',porTipo,(a,b)=>a[0].localeCompare(b[0],'es',{numeric:true}))
-   +tab('Extintores por año de próxima recarga',porProx,(a,b)=>a[0]-b[0])
-   +tab('Locales por mes de servicio',porMes,(a,b)=>MESES.indexOf(a[0].toUpperCase())-MESES.indexOf(b[0].toUpperCase()))
-   +`<div class="foot">Datos tomados de la base de datos (hoja DETALLE) el ${esc(DATA.actualizado)}. No incluye precios.</div>`;
-}
-function detalle(nombre){
-  const l=L.get(nombre); if(!l) return;
-  const rows=l.ext.map(e=>{const s=estado(e,ANIO);return `<tr><td data-h="Ubicación">${esc(e.ubic)||'<span class=mut>—</span>'}</td><td class="c" data-h="Tipo">${esc(e.tipo)}</td><td class="c" data-h="Capacidad">${esc(e.cap)}</td><td class="c" data-h="Últ. recarga">${e.ult}</td><td class="c" data-h="Mant. 1">${e.m1}</td><td class="c" data-h="Mant. 2">${e.m2}</td><td class="c" data-h="Próx. recarga">${e.prox}</td><td data-h="Estado ${ANIO}"><span class="chip ${s.c}">${s.t}</span></td></tr>`}).join('');
-  const tp=resumenTipos(l).map(([k,n])=>`<span class="chip">${n}× ${esc(k)}</span>`).join('');
-  $('#sheet').innerHTML=`<button class="x" id="cl">✕</button><span class="code ${l.pend?'pend':''}">${l.pend?'SIN CÓDIGO':esc(l.codigo)}</span>
-  <h2>${esc(l.corto)}</h2><div class="mut">${esc(cap(l.marca))} · Mes de servicio: <b>${cap(l.mes)}</b></div>
-  <div class="kpis"><div class="kpi"><b>${l.n}</b><span>Extintores</span></div><div class="kpi"><b>${l.ext.filter(e=>e.prox===ANIO).length}</b><span>Recarga ${ANIO}</span></div><div class="kpi"><b>${l.ext.filter(e=>e.m1===ANIO||e.m2===ANIO).length}</b><span>Mantenimiento ${ANIO}</span></div></div>
-  <div class="chips" style="margin:0 0 10px">${tp}</div>
-  ${l.mixto?'<div class="chip warn" style="margin-bottom:8px">Este local tiene extintores con ciclos de recarga distintos</div>':''}
-  <div class="tw" style="max-height:none"><table class="stack"><thead><tr><th>Ubicación</th><th class="c">Tipo</th><th class="c">Capacidad</th><th class="c">Últ. recarga</th><th class="c">Mant. 1</th><th class="c">Mant. 2</th><th class="c">Próx. recarga</th><th>Estado ${ANIO}</th></tr></thead><tbody>${rows}</tbody></table></div>
-  <div class="foot">Ciclo: recarga cada 3 años con mantenimiento anual en los años intermedios.</div>`;
-  $('#modal').classList.add('on');
-}
-function render(){({locales:vistaLocales,ext:vistaExt,mes:vistaMes,res:vistaRes})[st.tab]()}
-
-// ---- eventos
-let tm; $('#q').addEventListener('input',e=>{clearTimeout(tm);tm=setTimeout(()=>{st.q=e.target.value;render()},120)});
-$('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;st.tab=b.dataset.t;document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));render();scrollTo(0,0)});
-$('#main').addEventListener('change',e=>{const f=e.target.dataset.f;if(f){st[f]=e.target.value;render()}});
-$('#main').addEventListener('click',e=>{
-  if(e.target.id==='clr'){st.q=st.marca=st.mes=st.tipo=st.prox='';$('#q').value='';render();return}
-  const c=e.target.closest('[data-l]'); if(c) detalle(c.dataset.l);
-});
-$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'||e.target.id==='cl')$('#modal').classList.remove('on')});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#modal').classList.remove('on')});
-$('#btnPrint').addEventListener('click',()=>print());
+let tm;$('#q').addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(render,120)});
+$('#marca').addEventListener('change',render);$('#mes').addEventListener('change',render);
+$('#clr').addEventListener('click',()=>{$('#q').value='';$('#marca').value='';$('#mes').value='';render();$('#q').focus()});
+$('#prt').addEventListener('click',()=>print());
 render();
 })();
 </script>
