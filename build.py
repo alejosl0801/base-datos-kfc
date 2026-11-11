@@ -62,7 +62,7 @@ def contactos():
         k = kcode(gs.cell(row=r, column=1).value)
         if k:
             gerentes[k] = (tit(gs.cell(row=r, column=2).value), str(gs.cell(row=r, column=3).value or '').strip())
-    lst, h1 = {}, {}
+    lst, h1, tel_por_correo = {}, {}, {}
     if os.path.exists(LISTADO):
         lw = openpyxl.load_workbook(LISTADO, data_only=True)
         for row in lw['LOCALES GKFC 2022'].iter_rows(min_row=2, values_only=True):
@@ -76,6 +76,9 @@ def contactos():
             k = kcode(row[0])
             if k:
                 h1[k] = row
+        for row in lw['TD VAL RES'].iter_rows(min_row=3, values_only=True):
+            if row[4] and row[5]:
+                tel_por_correo.setdefault(str(row[4]).strip().lower(), str(row[5]).strip())
     for f in filas:
         nombre, codigo = f[2], f[1]
         lid = codigo if codigo != 'PENDIENTE' else nombre
@@ -85,23 +88,20 @@ def contactos():
         rec = {}
         if nombre in correo_local:
             rec['c'] = correo_local[nombre]
-        if k in gerentes and (gerentes[k][0] or gerentes[k][1]):
-            rec['g'] = {'n': gerentes[k][0], 'e': gerentes[k][1]}
         row = lst.get(k)
+        hr = h1.get(k)
+        if k in gerentes and (gerentes[k][0] or gerentes[k][1]):
+            n, e = gerentes[k]
+            rec['g'] = {'n': n, 'e': e, 't': tel_por_correo.get(e.lower(), '')}
+        else:
+            ja = tit((hr[7] if hr else None) or (row[20] if row else None))
+            if ja:
+                rec['g'] = {'n': ja, 'e': str(row[10] or '').strip() if row else '', 't': str(row[11] or '').strip() if row else ''}
         if row:
-            if row[9] or row[10] or row[11]:
-                rec['r'] = {'n': tit(row[9]), 'e': str(row[10] or '').strip(), 't': str(row[11] or '').strip()}
             if row[6]:
                 rec['rg'] = tit(row[6])
             if row[7]:
                 rec['z'] = str(row[7]).strip()
-        hr = h1.get(k)
-        ja = tit((hr[7] if hr else None) or (row[20] if row else None))
-        go = tit((hr[8] if hr else None) or (row[21] if row else None))
-        if ja:
-            rec['ja'] = ja
-        if go:
-            rec['go'] = go
         if rec:
             out[lid] = rec
     return out

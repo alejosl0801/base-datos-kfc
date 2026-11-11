@@ -154,10 +154,7 @@ function ctBlock(l){
   if(!c)return `<div class="ct"><h4>Datos de contacto</h4><span class="k">No hay datos de contacto de este local.</span></div>`;
   const ln=[];
   if(c.c)ln.push(`<span class="k">Correo del local:</span> ${mail(c.c)}`);
-  if(c.g)ln.push(`<span class="k">Gerente de operaciones:</span> <b>${esc(c.g.n||'')}</b>${c.g.e?' · '+mail(c.g.e):''}`);
-  if(c.r)ln.push(`<span class="k">Responsable:</span> <b>${esc(c.r.n||'')}</b>${c.r.e?' · '+mail(c.r.e):''}${c.r.t?' · '+tel(c.r.t):''}`);
-  if(c.ja)ln.push(`<span class="k">Jefe de área:</span> ${esc(c.ja)}`);
-  if(c.go&&(!c.g||norm(c.g.n)!==norm(c.go)))ln.push(`<span class="k">Gerente de operaciones (listado nacional):</span> ${esc(c.go)}`);
+  if(c.g)ln.push(`<span class="k">Gerente de operaciones:</span> <b>${esc(c.g.n||'')}</b>${c.g.e?' · '+mail(c.g.e):''}${c.g.t?' · '+tel(c.g.t):''}`);
   if(c.rg||c.z)ln.push(`<span class="k">Región:</span> ${esc(c.rg||'')}${c.z?' · zona '+esc(c.z):''}`);
   return `<div class="ct"><h4>Datos de contacto</h4>${ln.join('<br>')}</div>`;
 }
