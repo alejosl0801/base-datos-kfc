@@ -106,6 +106,22 @@ let OBS={};try{OBS=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
 Object.keys(OBS).forEach(k=>{if(typeof OBS[k]==='string')OBS[k]={t:OBS[k],d:null}});
 const fdate=d=>{if(!d)return'';const x=new Date(d);return x.toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+x.toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})};
 const saveObs=()=>{try{localStorage.setItem(KEY,JSON.stringify(OBS));return true}catch(e){return false}};
+const CFG=DATA.cfg||{};const SHARED=!!CFG.obs_url;
+async function api(method,body){
+  const u=CFG.obs_url+(method==='GET'?'?k='+encodeURIComponent(CFG.app_key):'');
+  const r=await fetch(u,method==='GET'?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({k:CFG.app_key},body))});
+  if(!r.ok){const e=new Error('http '+r.status);e.status=r.status;throw e}
+  return r.json();
+}
+async function pushPend(){for(const k of Object.keys(OBS)){const o=OBS[k];if(o&&o.p){try{await api('POST',{action:'put',id:k,text:o.t});delete o.p}catch(e){}}}saveObs()}
+async function pull(){
+  if(!SHARED)return false;
+  try{await pushPend();const j=await api('GET');const srv=j.items||{};const nu={};
+    for(const k in srv)nu[k]={t:srv[k].t,d:srv[k].d};
+    for(const k in OBS){if(OBS[k]&&OBS[k].p)nu[k]=OBS[k]}
+    const ch=JSON.stringify(nu)!==JSON.stringify(OBS);OBS=nu;saveObs();return ch;
+  }catch(e){return false}
+}
 const okey=l=>l.codigo==='PENDIENTE'?l.nombre:l.codigo;
 E.forEach(r=>{let l=idx[r[2]];if(!l){l=idx[r[2]]={marca:r[0],codigo:r[1],nombre:r[2],mes:r[3],acc:(DATA.acc||{})[r[2]]||'?',ext:[]};locs.push(l)}
   l.ext.push({u:r[4],t:r[5],c:r[6],y:[r[7],r[8],r[9],r[10]],b:norm([r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]].join(' '))})});
@@ -154,7 +170,7 @@ function cardLocal(l,rows){
   <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
   rows.map(e=>`<div class="row"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t">${esc(e.t)} ${esc(e.c)}</span><span class="c d">${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b></span></div>`).join('')+`</section>`;
 }
-const NOTA='<div class="foot">Las observaciones se guardan en este celular o computadora (no se comparten con otros aparatos).</div>';
+const NOTA=SHARED?'<div class="foot">Las observaciones le llegan a Alejandro. Cuando las resuelve, desaparecen de la lista.</div>':'<div class="foot">Las observaciones se guardan en este celular o computadora (no se comparten con otros aparatos).</div>';
 const back=(txt)=>`<button class="bk" data-go="">← ${txt||'Volver al inicio'}</button>`;
 
 const MES_ACT=MESES[new Date().getMonth()];
@@ -178,7 +194,7 @@ function vInicio(){
     <button class="big" data-go="mes"><span class="ic">📅</span><b>Locales de este mes</b><small>${tc(MES_ACT)} · ${nm} ${nm==1?'local':'locales'}</small></button>
     <button class="big" data-go="todos"><span class="ic">📋</span><b>Ver todos los locales</b><small>La lista completa</small></button>
     <button class="big" data-go="marcas"><span class="ic">🏷️</span><b>Ver por marca</b><small>KFC, Juan Valdez, Cajun…</small></button>
-    <button class="big sec" data-go="obs"><span class="ic">📝</span><b>Mis observaciones</b><small>${no?no+(no==1?' escrita':' escritas'):'Aquí aparecen las que escribas'}</small></button></div>`;
+    <button class="big sec" data-go="obs"><span class="ic">📝</span><b>Mis observaciones</b><small>${no?no+(no==1?' pendiente':' pendientes'):'Aquí aparecen las que escribas'}</small></button></div>`;
   const bi=$('#doInst');if(bi)bi.addEventListener('click',doInstall);
 }
 function doInstall(){if(DEF){DEF.prompt();DEF.userChoice.finally(()=>{DEF=null;route()})}}
@@ -192,6 +208,24 @@ function vInstalar(){
   $('#main').innerHTML='<div class="home">'+h+'</div>';
   const bi=$('#doInst');if(bi)bi.addEventListener('click',doInstall);
 }
+
+async function vAdmin(){
+  $('#bar').innerHTML=back();$('#count').textContent='';
+  let pin=sessionStorage.getItem('kfc_pin')||'';
+  if(!SHARED){$('#main').innerHTML='<div class="empty">Las observaciones compartidas aún no están activadas.</div>';return}
+  const draw=async()=>{
+    let j;try{j=await api('GET')}catch(e){$('#main').innerHTML='<div class="empty">No se pudo conectar.</div>';return}
+    const items=Object.entries(j.items||{}).sort((a,b)=>String(b[1].d).localeCompare(String(a[1].d)));
+    $('#count').textContent=items.length?`${items.length} pendientes`:'';
+    $('#main').innerHTML=items.length?items.map(([k,o])=>`<div class="it" style="cursor:default"><b>${esc((byId[k]||{}).nombre||k)}</b><small>${o.d?'escrita '+fdate(o.d):''}</small><span class="pv">${esc(o.t)}</span><button class="btnres" data-res="${esc(k)}" style="margin-top:8px;background:#157347;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:15px;cursor:pointer">✔ Resuelta (borrar)</button></div>`).join(''):'<div class="empty">No hay observaciones pendientes. 🎉</div>';
+  };
+  $('#main').onclick=async e=>{const b=e.target.closest('[data-res]');if(!b)return;
+    if(!pin){pin=prompt('PIN de administrador:')||'';if(!pin)return}
+    try{await api('POST',{action:'del',id:b.dataset.res,pin});sessionStorage.setItem('kfc_pin',pin);await draw()}
+    catch(er){if(er.status===403){pin='';sessionStorage.removeItem('kfc_pin');alert('PIN incorrecto')}else alert('No se pudo borrar. Revisa la conexión.')}};
+  await draw();
+}
+
 function vMes(){
   $('#bar').innerHTML=`${back()}<button id="prt">Imprimir</button>`;
   const r=locs.filter(l=>l.mes===MES_ACT);
@@ -246,21 +280,24 @@ function vLocal(id){
   $('#bar').innerHTML=`${back('Volver').replace('data-go=""','data-go="back"')}<button id="prt">Imprimir</button>`;$('#count').textContent='';
   $('#main').innerHTML=cardLocal(l)+NOTA;$('#prt').addEventListener('click',()=>print());
 }
-async function route(){
+async function route(skipPull){
   const h=decodeURIComponent(location.hash.replace(/^#\/?/,''));
   if(h.startsWith('clave/')){const ok=await abrirContactos(h.slice(6),false);location.replace(location.pathname+(ok?'#/':'#/'));return}
   window.scrollTo(0,0);
-  if(h==='mes')vMes();else if(h==='obs')vObs();else if(h==='instalar')vInstalar();else if(h==='buscar')vBuscar();else if(h==='todos')vTodos();else if(h==='marcas')vMarcas();
+  if(!skipPull&&SHARED&&(h===''||h==='obs'||h==='admin'))pull().then(ch=>{if(ch&&decodeURIComponent(location.hash.replace(/^#\/?/,''))===h&&!document.activeElement.matches('input,textarea'))route(true)});
+  if(h==='mes')vMes();else if(h==='obs')vObs();else if(h==='admin')vAdmin();else if(h==='instalar')vInstalar();else if(h==='buscar')vBuscar();else if(h==='todos')vTodos();else if(h==='marcas')vMarcas();
   else if(h.startsWith('marca/'))vMarca(h.slice(6));else if(h.startsWith('local/'))vLocal(h.slice(6));else vInicio();
 }
 document.addEventListener('click',async e=>{if(e.target.closest('[data-unlock]')){const k=prompt('Escribe la clave de contactos (solo una vez):');if(k&&await abrirContactos(k,false))route();return}
   const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;
   if(g==='back'){history.length>1?history.back():(location.hash='')}else if(g==='')location.hash='';else location.hash='#/'+g.split('/').map((x,i)=>i?encodeURIComponent(decodeURIComponent(x)):x).join('/')});
-window.addEventListener('hashchange',route);
+window.addEventListener('hashchange',()=>route());
 const tms={};
 document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
-  const v=e.target.value;if(v.trim())OBS[k]={t:v,d:new Date().toISOString()};else delete OBS[k];
-  clearTimeout(tms[k]);tms[k]=setTimeout(()=>{const ok=saveObs();const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=ok?'✓ guardado':'no se pudo guardar';const od=[...document.querySelectorAll('[data-od]')].find(x=>x.dataset.od===k);if(od)od.textContent=OBS[k]?'escrita '+fdate(OBS[k].d):'';setTimeout(()=>{el.textContent=''},1800)}},400)});
+  const v=e.target.value;if(v.trim())OBS[k]={t:v,d:new Date().toISOString(),p:SHARED?1:undefined};else delete OBS[k];
+  clearTimeout(tms[k]);tms[k]=setTimeout(async()=>{let ok=saveObs();let msg=ok?'✓ guardado':'no se pudo guardar';
+    if(SHARED){try{await api('POST',{action:'put',id:k,text:v.trim()?v:''});if(OBS[k])delete OBS[k].p;saveObs();msg='✓ enviada a Alejandro'}catch(er){msg='guardada en tu celular, se enviará cuando haya internet'}}
+    const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=msg;const od=[...document.querySelectorAll('[data-od]')].find(x=>x.dataset.od===k);if(od)od.textContent=OBS[k]?'escrita '+fdate(OBS[k].d):'';setTimeout(()=>{el.textContent=''},3500)}},500)});
 try{const gk=localStorage.getItem('kfc_clave');if(gk&&CIFRADO)abrirContactos(gk,true).then(ok=>{if(ok)route()})}catch(e){}
 route();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
