@@ -118,7 +118,7 @@ async function pull(){
   if(!SHARED)return false;
   try{await pushPend();const j=await api('GET');const srv=j.items||{};const nu={};
     for(const k in srv)nu[k]={t:srv[k].t,d:srv[k].d};
-    for(const k in OBS){if(OBS[k]&&OBS[k].p)nu[k]=OBS[k]}
+    for(const k in OBS){const o=OBS[k];if(o&&(o.p||(!srv[k]&&o.d&&Date.now()-new Date(o.d)<120000)))nu[k]=o}
     const ch=JSON.stringify(nu)!==JSON.stringify(OBS);OBS=nu;saveObs();return ch;
   }catch(e){return false}
 }
