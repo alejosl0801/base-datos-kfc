@@ -61,6 +61,12 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 .it b{display:block;font-size:17px}.it small{color:var(--mut);font-size:14px}.it:hover{border-color:var(--red)}
 .bk{flex:1 1 100%;text-align:left;border:0;background:rgba(255,255,255,.2);color:#fff;font-weight:700;font-size:16px;padding:10px 12px;border-radius:10px;cursor:pointer}
 .bar:empty{display:none}
+.ct{padding:9px 12px;background:#eef4fb;border-top:1px solid var(--line);font-size:14.5px;line-height:1.55}
+.ct h4{margin:0 0 4px;font-size:12px;color:#1f4e8c;text-transform:uppercase;letter-spacing:.3px}
+.ct a{color:#1f4e8c;font-weight:600;word-break:break-all}
+.ct .k{color:var(--mut)}
+.ct button{background:#1f4e8c;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;width:100%}
+.ct .er{color:#a11d1d;font-size:13px;margin-top:4px}
 .big.sec{padding:14px 18px}.big.sec .ic{font-size:28px}.big.sec b{font-size:17px}
 .inst{background:#e8f5ec;border:2px solid #157347;border-radius:14px;padding:16px;margin:4px 0;text-align:center}
 .inst button{background:#157347;color:#fff;border:0;border-radius:12px;font-size:19px;font-weight:700;padding:14px 20px;width:100%;cursor:pointer}
@@ -83,6 +89,7 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 <script>
 const APP_V = __VERSION__, APP_F = "__FECHAV__";
 const DATA = __DATOS__;
+const CIFRADO = "__CIFRADO__";
 </script>
 <script>
 (function(){
@@ -107,10 +114,43 @@ const marcas=[...new Set(locs.map(l=>l.marca))];
 const byId={};locs.forEach(l=>byId[l.id]=l);
 $('#sub').textContent=`${locs.length} locales · ${E.length} extintores · actualizado ${DATA.actualizado}`;
 
+
+// ---- contactos cifrados (clave una sola vez por aparato)
+let CONT=null;
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function descifrar(clave){
+  const raw=b64(CIFRADO),salt=raw.slice(0,16),iv=raw.slice(16,28),ct=raw.slice(28);
+  const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(clave.trim()),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function abrirContactos(clave,silencioso){
+  try{CONT=await descifrar(clave);try{localStorage.setItem('kfc_clave',clave.trim())}catch(e){}return true}
+  catch(e){CONT=null;if(!silencioso)alert('La clave no es correcta. Pídesela a Alejandro.');try{if(silencioso)localStorage.removeItem('kfc_clave')}catch(e){}return false}
+}
+const tel=t=>t?`<a href="tel:${esc(t.replace(/[^\d+]/g,''))}">${esc(t)}</a>`:'';
+const mail=m=>m?`<a href="mailto:${esc(m)}">${esc(m)}</a>`:'';
+function ctBlock(l){
+  if(!CIFRADO)return'';
+  if(!CONT)return `<div class="ct"><button data-unlock="1">🔒 Ver datos de contacto del local</button></div>`;
+  const c=CONT[l.id];
+  if(!c)return `<div class="ct"><h4>Datos de contacto</h4><span class="k">No hay datos de contacto de este local.</span></div>`;
+  const ln=[];
+  if(c.c)ln.push(`<span class="k">Correo del local:</span> ${mail(c.c)}`);
+  if(c.g)ln.push(`<span class="k">Gerente de operaciones:</span> <b>${esc(c.g.n||'')}</b>${c.g.e?' · '+mail(c.g.e):''}`);
+  if(c.r)ln.push(`<span class="k">Responsable:</span> <b>${esc(c.r.n||'')}</b>${c.r.e?' · '+mail(c.r.e):''}${c.r.t?' · '+tel(c.r.t):''}`);
+  if(c.ja)ln.push(`<span class="k">Jefe de área:</span> ${esc(c.ja)}`);
+  if(c.go&&(!c.g||norm(c.g.n)!==norm(c.go)))ln.push(`<span class="k">Gerente de operaciones (listado nacional):</span> ${esc(c.go)}`);
+  if(c.rg||c.z)ln.push(`<span class="k">Región:</span> ${esc(c.rg||'')}${c.z?' · zona '+esc(c.z):''}`);
+  return `<div class="ct"><h4>Datos de contacto</h4>${ln.join('<br>')}</div>`;
+}
+
 function cardLocal(l,rows){
   rows=rows||l.ext;
   return `<section class="loc"><div class="lh"><span>${esc(l.nombre)}</span><span>${esc(tc(l.marca))} · ${tc(l.mes)}</span></div>
   <div class="lx"><div class="acc">Acc. distancia:<b class="${l.acc==='SI'?'si':l.acc==='NO'?'no':'q'}">${l.acc==='SI'?'SÍ':l.acc}</b></div><label for="o_${esc(l.id)}">Observación <span class="od" data-od="${esc(l.id)}">${OBS[l.id]&&OBS[l.id].d?'escrita '+fdate(OBS[l.id].d):''}</span> <span class="sv" data-sv="${esc(l.id)}"></span></label><textarea id="o_${esc(l.id)}" data-k="${esc(l.id)}" placeholder="Escribe aquí una observación para este local…">${esc((OBS[l.id]||{}).t||'')}</textarea></div>
+  ${ctBlock(l)}
   <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
   rows.map(e=>`<div class="row"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t">${esc(e.t)} ${esc(e.c)}</span><span class="c d">${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b></span></div>`).join('')+`</section>`;
 }
@@ -206,19 +246,22 @@ function vLocal(id){
   $('#bar').innerHTML=`${back('Volver').replace('data-go=""','data-go="back"')}<button id="prt">Imprimir</button>`;$('#count').textContent='';
   $('#main').innerHTML=cardLocal(l)+NOTA;$('#prt').addEventListener('click',()=>print());
 }
-function route(){
+async function route(){
   const h=decodeURIComponent(location.hash.replace(/^#\/?/,''));
+  if(h.startsWith('clave/')){const ok=await abrirContactos(h.slice(6),false);location.replace(location.pathname+(ok?'#/':'#/'));return}
   window.scrollTo(0,0);
   if(h==='mes')vMes();else if(h==='obs')vObs();else if(h==='instalar')vInstalar();else if(h==='buscar')vBuscar();else if(h==='todos')vTodos();else if(h==='marcas')vMarcas();
   else if(h.startsWith('marca/'))vMarca(h.slice(6));else if(h.startsWith('local/'))vLocal(h.slice(6));else vInicio();
 }
-document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;
+document.addEventListener('click',async e=>{if(e.target.closest('[data-unlock]')){const k=prompt('Escribe la clave de contactos (solo una vez):');if(k&&await abrirContactos(k,false))route();return}
+  const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;
   if(g==='back'){history.length>1?history.back():(location.hash='')}else if(g==='')location.hash='';else location.hash='#/'+g.split('/').map((x,i)=>i?encodeURIComponent(decodeURIComponent(x)):x).join('/')});
 window.addEventListener('hashchange',route);
 const tms={};
 document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
   const v=e.target.value;if(v.trim())OBS[k]={t:v,d:new Date().toISOString()};else delete OBS[k];
   clearTimeout(tms[k]);tms[k]=setTimeout(()=>{const ok=saveObs();const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=ok?'✓ guardado':'no se pudo guardar';const od=[...document.querySelectorAll('[data-od]')].find(x=>x.dataset.od===k);if(od)od.textContent=OBS[k]?'escrita '+fdate(OBS[k].d):'';setTimeout(()=>{el.textContent=''},1800)}},400)});
+try{const gk=localStorage.getItem('kfc_clave');if(gk&&CIFRADO)abrirContactos(gk,true).then(ok=>{if(ok)route()})}catch(e){}
 route();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 $('#ver').textContent='Versión '+APP_V;
