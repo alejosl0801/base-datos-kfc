@@ -4,10 +4,11 @@
  *
  * Necesita (se configura una sola vez en Cloudflare):
  *   - KV namespace enlazado con el nombre de variable:  OBS
- *   - Secret:  ADMIN_PIN   (el PIN que solo conoce Alejandro; sirve para borrar)
+ * El PIN de administrador (para borrar) no se guarda aqui: solo su huella SHA-256.
  */
 const APP_KEY = 'pNU717Phq0XT2xYZiA_Dy2b7';
 const ORIGENES = ['https://alejosl0801.github.io', 'http://127.0.0.1:8765', 'http://localhost:8765'];
+const PIN_SHA256 = '2d674a12c9e2eeb3fc357c1338a0762d20b50dab8cd089cb4185a48dcb769fab';
 const MAX_TEXTO = 1500, MAX_ITEMS = 600;
 
 export default {
@@ -50,7 +51,9 @@ export default {
         return json({ ok: true });
       }
       if (b.action === 'del') {
-        if (!env.ADMIN_PIN || b.pin !== env.ADMIN_PIN) return json({ error: 'pin' }, 403);
+        const dig = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(b.pin || '')));
+        const hex = [...new Uint8Array(dig)].map((x) => x.toString(16).padStart(2, '0')).join('');
+        if (hex !== PIN_SHA256) return json({ error: 'pin' }, 403);
         await env.OBS.delete('o:' + id);
         return json({ ok: true });
       }
