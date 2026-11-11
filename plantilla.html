@@ -6,6 +6,10 @@
 <meta name="theme-color" content="#922B21">
 <meta name="robots" content="noindex, nofollow">
 <title>Listado de extintores · Grupo KFC</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23922B21'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3EK%3C/text%3E%3C/svg%3E">
 <style>
 :root{--red:#922B21;--bg:#f4f5f7;--line:#d9dde4;--ink:#1d2330;--mut:#6b7280;--zeb:#f4f8fb}
@@ -57,6 +61,13 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 .it b{display:block;font-size:17px}.it small{color:var(--mut);font-size:14px}.it:hover{border-color:var(--red)}
 .bk{flex:1 1 100%;text-align:left;border:0;background:rgba(255,255,255,.2);color:#fff;font-weight:700;font-size:16px;padding:10px 12px;border-radius:10px;cursor:pointer}
 .bar:empty{display:none}
+.big.sec{padding:14px 18px}.big.sec .ic{font-size:28px}.big.sec b{font-size:17px}
+.inst{background:#e8f5ec;border:2px solid #157347;border-radius:14px;padding:16px;margin:4px 0;text-align:center}
+.inst button{background:#157347;color:#fff;border:0;border-radius:12px;font-size:19px;font-weight:700;padding:14px 20px;width:100%;cursor:pointer}
+.inst p{margin:8px 0 0;font-size:15px}
+.stp{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;font-size:17px;line-height:1.7}
+.od{color:var(--mut);font-size:12px;font-weight:500;margin-left:6px;text-transform:none}
+.it .pv{display:block;color:#4b3b00;background:#fff8e8;border-radius:8px;padding:6px 8px;margin-top:6px;font-size:14px;white-space:pre-wrap}
 .ver{position:fixed;right:8px;bottom:8px;background:rgba(29,35,48,.82);color:#fff;font-size:12px;padding:4px 10px;border-radius:999px;z-index:30;pointer-events:none}
 @media print{.ver{display:none}}
 </style>
@@ -85,6 +96,8 @@ const E=DATA.extintores; // [marca,codigo,nombre,mes,ubic,tipo,cap,ult,m1,m2,pro
 const locs=[];const idx={};
 const KEY='kfc_obs_v1';
 let OBS={};try{OBS=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+Object.keys(OBS).forEach(k=>{if(typeof OBS[k]==='string')OBS[k]={t:OBS[k],d:null}});
+const fdate=d=>{if(!d)return'';const x=new Date(d);return x.toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+x.toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})};
 const saveObs=()=>{try{localStorage.setItem(KEY,JSON.stringify(OBS));return true}catch(e){return false}};
 const okey=l=>l.codigo==='PENDIENTE'?l.nombre:l.codigo;
 E.forEach(r=>{let l=idx[r[2]];if(!l){l=idx[r[2]]={marca:r[0],codigo:r[1],nombre:r[2],mes:r[3],acc:(DATA.acc||{})[r[2]]||'?',ext:[]};locs.push(l)}
@@ -97,20 +110,67 @@ $('#sub').textContent=`${locs.length} locales · ${E.length} extintores · actua
 function cardLocal(l,rows){
   rows=rows||l.ext;
   return `<section class="loc"><div class="lh"><span>${esc(l.nombre)}</span><span>${esc(tc(l.marca))} · ${tc(l.mes)}</span></div>
-  <div class="lx"><div class="acc">Acc. distancia:<b class="${l.acc==='SI'?'si':l.acc==='NO'?'no':'q'}">${l.acc==='SI'?'SÍ':l.acc}</b></div><label for="o_${esc(l.id)}">Observación <span class="sv" data-sv="${esc(l.id)}"></span></label><textarea id="o_${esc(l.id)}" data-k="${esc(l.id)}" placeholder="Escribe aquí una observación para este local…">${esc(OBS[l.id]||'')}</textarea></div>
+  <div class="lx"><div class="acc">Acc. distancia:<b class="${l.acc==='SI'?'si':l.acc==='NO'?'no':'q'}">${l.acc==='SI'?'SÍ':l.acc}</b></div><label for="o_${esc(l.id)}">Observación <span class="od" data-od="${esc(l.id)}">${OBS[l.id]&&OBS[l.id].d?'escrita '+fdate(OBS[l.id].d):''}</span> <span class="sv" data-sv="${esc(l.id)}"></span></label><textarea id="o_${esc(l.id)}" data-k="${esc(l.id)}" placeholder="Escribe aquí una observación para este local…">${esc((OBS[l.id]||{}).t||'')}</textarea></div>
   <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
   rows.map(e=>`<div class="row"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t">${esc(e.t)} ${esc(e.c)}</span><span class="c d">${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b></span></div>`).join('')+`</section>`;
 }
 const NOTA='<div class="foot">Las observaciones se guardan en este celular o computadora (no se comparten con otros aparatos).</div>';
 const back=(txt)=>`<button class="bk" data-go="">← ${txt||'Volver al inicio'}</button>`;
 
+const MES_ACT=MESES[new Date().getMonth()];
+let DEF=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEF=e;if(/^(#\/?)?$/.test(location.hash)||location.hash==='#/instalar')route()});
+window.addEventListener('appinstalled',()=>{DEF=null;route()});
+const STANDALONE=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const IOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+function instBlock(){
+  if(STANDALONE())return'';
+  if(DEF)return '<div class="inst"><button id="doInst">📲 Instalar en mi celular</button><p>Queda un ícono en la pantalla, como cualquier app.</p></div>';
+  if(IOS)return '<div class="inst"><p><b>Para tenerla como app:</b> toca el botón <b>Compartir</b> (cuadrito con flecha) y luego <b>Añadir a pantalla de inicio</b>.</p></div>';
+  return '';
+}
 function vInicio(){
   $('#bar').innerHTML='';$('#count').textContent='';
-  $('#main').innerHTML=`<div class="home">
+  const nm=locs.filter(l=>l.mes===MES_ACT).length;
+  const no=Object.keys(OBS).filter(k=>OBS[k]&&OBS[k].t).length;
+  $('#main').innerHTML=`<div class="home">${instBlock()}
     <button class="big" data-go="buscar"><span class="ic">🔍</span><b>Buscar un local</b><small>Escribe el nombre y aparece</small></button>
+    <button class="big" data-go="mes"><span class="ic">📅</span><b>Locales de este mes</b><small>${tc(MES_ACT)} · ${nm} ${nm==1?'local':'locales'}</small></button>
     <button class="big" data-go="todos"><span class="ic">📋</span><b>Ver todos los locales</b><small>La lista completa</small></button>
-    <button class="big" data-go="marcas"><span class="ic">🏷️</span><b>Ver por marca</b><small>KFC, Juan Valdez, Cajun…</small></button></div>`;
+    <button class="big" data-go="marcas"><span class="ic">🏷️</span><b>Ver por marca</b><small>KFC, Juan Valdez, Cajun…</small></button>
+    <button class="big sec" data-go="obs"><span class="ic">📝</span><b>Mis observaciones</b><small>${no?no+(no==1?' escrita':' escritas'):'Aquí aparecen las que escribas'}</small></button></div>`;
+  const bi=$('#doInst');if(bi)bi.addEventListener('click',doInstall);
 }
+function doInstall(){if(DEF){DEF.prompt();DEF.userChoice.finally(()=>{DEF=null;route()})}}
+function vInstalar(){
+  $('#bar').innerHTML=back();$('#count').textContent='';
+  let h;
+  if(STANDALONE())h='<div class="stp"><b>Ya está instalada ✅</b><br>Búscala por su ícono rojo con una K en la pantalla de inicio.</div>';
+  else if(DEF)h='<div class="inst"><button id="doInst">📲 Instalar en mi celular</button><p>Toca el botón y luego <b>Instalar</b>.</p></div>';
+  else if(IOS)h='<div class="stp"><b>En iPhone:</b><br>1. Toca el botón <b>Compartir</b> (cuadrito con flecha hacia arriba)<br>2. Toca <b>Añadir a pantalla de inicio</b><br>3. Toca <b>Añadir</b></div>';
+  else h='<div class="stp"><b>En Android:</b><br>1. Toca los <b>tres puntitos ⋮</b> arriba a la derecha<br>2. Toca <b>Instalar aplicación</b> (o <b>Añadir a pantalla de inicio</b>)<br>3. Toca <b>Instalar</b></div>';
+  $('#main').innerHTML='<div class="home">'+h+'</div>';
+  const bi=$('#doInst');if(bi)bi.addEventListener('click',doInstall);
+}
+function vMes(){
+  $('#bar').innerHTML=`${back()}<button id="prt">Imprimir</button>`;
+  const r=locs.filter(l=>l.mes===MES_ACT);
+  $('#count').textContent=`${tc(MES_ACT)} · ${r.length} ${r.length==1?'local':'locales'} · ${r.reduce((a,l)=>a+l.ext.length,0)} extintores`;
+  $('#main').innerHTML=(r.length?r.map(l=>cardLocal(l)).join(''):'<div class="empty">Este mes no hay locales.</div>')+NOTA;$('#prt').addEventListener('click',()=>print());
+}
+function vObs(){
+  $('#bar').innerHTML=`${back()}<input id="q" type="search" placeholder="Buscar en mis observaciones…" autocomplete="off">`;
+  $('#main').innerHTML='<div id="res"></div>';
+  const q=$('#q');
+  const go=()=>{
+    const w=norm(q.value).trim().split(/\s+/).filter(Boolean);
+    const items=Object.keys(OBS).filter(k=>OBS[k]&&OBS[k].t&&byId[k]).map(k=>({l:byId[k],o:OBS[k]})).filter(x=>w.every(y=>norm(x.o.t+' '+x.l.nombre).includes(y))).sort((a,b)=>String(b.o.d).localeCompare(String(a.o.d)));
+    $('#count').textContent=items.length?`${items.length} ${items.length==1?'observación':'observaciones'}`:'';
+    $('#res').innerHTML=items.length?items.map(x=>`<button class="it" data-go="local/${esc(x.l.id)}"><b>${esc(x.l.nombre)}</b><small>${esc(tc(x.l.marca))} · ${x.o.d?'escrita '+fdate(x.o.d):''}</small><span class="pv">${esc(x.o.t)}</span></button>`).join('')+NOTA:`<div class="empty">${w.length?'No hay observaciones con esa palabra.':'Todavía no has escrito observaciones.<br><span class="mut">Entra a un local y escribe en el cuadro amarillo.</span>'}</div>`;
+  };
+  q.addEventListener('input',go);go();
+}
+
 let LASTQ='';
 function vBuscar(){
   $('#bar').innerHTML=`${back()}<input id="q" type="search" placeholder="Escribe el nombre del local…  ej: Alborada" autocomplete="off">`;
@@ -149,7 +209,7 @@ function vLocal(id){
 function route(){
   const h=decodeURIComponent(location.hash.replace(/^#\/?/,''));
   window.scrollTo(0,0);
-  if(h==='buscar')vBuscar();else if(h==='todos')vTodos();else if(h==='marcas')vMarcas();
+  if(h==='mes')vMes();else if(h==='obs')vObs();else if(h==='instalar')vInstalar();else if(h==='buscar')vBuscar();else if(h==='todos')vTodos();else if(h==='marcas')vMarcas();
   else if(h.startsWith('marca/'))vMarca(h.slice(6));else if(h.startsWith('local/'))vLocal(h.slice(6));else vInicio();
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;
@@ -157,9 +217,10 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!
 window.addEventListener('hashchange',route);
 const tms={};
 document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
-  const v=e.target.value;if(v.trim())OBS[k]=v;else delete OBS[k];
-  clearTimeout(tms[k]);tms[k]=setTimeout(()=>{const ok=saveObs();const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=ok?'✓ guardado':'no se pudo guardar';setTimeout(()=>{el.textContent=''},1800)}},400)});
+  const v=e.target.value;if(v.trim())OBS[k]={t:v,d:new Date().toISOString()};else delete OBS[k];
+  clearTimeout(tms[k]);tms[k]=setTimeout(()=>{const ok=saveObs();const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=ok?'✓ guardado':'no se pudo guardar';const od=[...document.querySelectorAll('[data-od]')].find(x=>x.dataset.od===k);if(od)od.textContent=OBS[k]?'escrita '+fdate(OBS[k].d):'';setTimeout(()=>{el.textContent=''},1800)}},400)});
 route();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 $('#ver').textContent='Versión '+APP_V;
 try{fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const m=t.match(/const APP_V = (\d+)/);
