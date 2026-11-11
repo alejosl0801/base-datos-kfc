@@ -48,18 +48,21 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
   .row>.d{display:none}
 }
 @media print{.lx textarea{border:0;padding:0;background:none;resize:none}header{position:static;background:#fff;color:#000;box-shadow:none}.bar{display:none}.loc{break-inside:avoid}.lh{background:#ddd;color:#000}}
+
+.home{display:flex;flex-direction:column;gap:14px;padding:18px 4px}
+.big{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"i b" "i s";column-gap:14px;align-items:center;text-align:left;background:#fff;border:2px solid var(--line);border-radius:16px;padding:22px 18px;cursor:pointer;font:inherit;color:var(--ink)}
+.big:hover{border-color:var(--red)}
+.big .ic{grid-area:i;font-size:38px}.big b{grid-area:b;font-size:21px}.big small{grid-area:s;color:var(--mut);font-size:14px}
+.it{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 14px;margin:8px 0;cursor:pointer;font:inherit;color:var(--ink)}
+.it b{display:block;font-size:17px}.it small{color:var(--mut);font-size:14px}.it:hover{border-color:var(--red)}
+.bk{flex:1 1 100%;text-align:left;border:0;background:rgba(255,255,255,.2);color:#fff;font-weight:700;font-size:16px;padding:10px 12px;border-radius:10px;cursor:pointer}
+.bar:empty{display:none}
 </style>
 </head>
 <body>
 <header>
   <h1>Listado de extintores · Grupo KFC<small id="sub"></small></h1>
-  <div class="bar">
-    <input id="q" type="search" placeholder="Escribe el nombre del local…  ej: Alborada" autocomplete="off">
-    <select id="marca"></select>
-    <select id="mes"></select>
-    <button id="clr">Limpiar</button>
-    <button id="prt">Imprimir</button>
-  </div>
+  <div class="bar" id="bar"></div>
 </header>
 <div class="count" id="count"></div>
 <main id="main"></main>
@@ -82,37 +85,77 @@ const saveObs=()=>{try{localStorage.setItem(KEY,JSON.stringify(OBS));return true
 const okey=l=>l.codigo==='PENDIENTE'?l.nombre:l.codigo;
 E.forEach(r=>{let l=idx[r[2]];if(!l){l=idx[r[2]]={marca:r[0],codigo:r[1],nombre:r[2],mes:r[3],acc:(DATA.acc||{})[r[2]]||'?',ext:[]};locs.push(l)}
   l.ext.push({u:r[4],t:r[5],c:r[6],y:[r[7],r[8],r[9],r[10]],b:norm([r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]].join(' '))})});
+locs.forEach(l=>{l.id=okey(l);l.blob=norm([l.marca,l.codigo,l.nombre,l.mes].join(' '));l.full=l.blob+' '+l.ext.map(e=>e.b).join(' ')});
 const marcas=[...new Set(locs.map(l=>l.marca))];
-$('#marca').innerHTML='<option value="">Todas las marcas</option>'+marcas.map(m=>`<option value="${esc(m)}">${esc(tc(m))}</option>`).join('');
-$('#mes').innerHTML='<option value="">Todos los meses</option>'+MESES.map(m=>`<option value="${m}">${tc(m)}</option>`).join('');
+const byId={};locs.forEach(l=>byId[l.id]=l);
 $('#sub').textContent=`${locs.length} locales · ${E.length} extintores · actualizado ${DATA.actualizado}`;
 
-function render(){
-  const words=norm($('#q').value).trim().split(/\s+/).filter(Boolean);
-  const m=$('#marca').value, mes=$('#mes').value;
-  let nl=0,ne=0,html='';
-  for(const l of locs){
-    if(m&&l.marca!==m) continue; if(mes&&l.mes!==mes) continue;
-    const rows=l.ext.filter(e=>words.every(w=>e.b.includes(w)));
-    if(!rows.length) continue;
-    nl++;ne+=rows.length;
-    html+=`<section class="loc"><div class="lh"><span>${esc(l.nombre)}</span><span>${esc(tc(l.marca))} · ${tc(l.mes)}</span></div>
-    <div class="lx"><div class="acc">Acc. distancia:<b class="${l.acc==='SI'?'si':l.acc==='NO'?'no':'q'}">${l.acc==='SI'?'SÍ':l.acc}</b></div><label for="o_${esc(okey(l))}">Observación <span class="sv" data-sv="${esc(okey(l))}"></span></label><textarea id="o_${esc(okey(l))}" data-k="${esc(okey(l))}" placeholder="Escribe aquí una observación para este local…">${esc(OBS[okey(l)]||'')}</textarea></div>
-    <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
-    rows.map(e=>`<div class="row"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t">${esc(e.t)} ${esc(e.c)}</span><span class="c d">${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b></span></div>`).join('')+`</section>`;
-  }
-  $('#count').textContent=nl?`${nl} ${nl==1?'local':'locales'} · ${ne} ${ne==1?'extintor':'extintores'}`:'';
-  $('#main').innerHTML=(html||'<div class="empty">No encontré nada. Prueba con otra palabra.</div>')+'<div class="foot">Las observaciones se guardan en este celular o computadora (no se comparten con otros aparatos).</div>';
+function cardLocal(l,rows){
+  rows=rows||l.ext;
+  return `<section class="loc"><div class="lh"><span>${esc(l.nombre)}</span><span>${esc(tc(l.marca))} · ${tc(l.mes)}</span></div>
+  <div class="lx"><div class="acc">Acc. distancia:<b class="${l.acc==='SI'?'si':l.acc==='NO'?'no':'q'}">${l.acc==='SI'?'SÍ':l.acc}</b></div><label for="o_${esc(l.id)}">Observación <span class="sv" data-sv="${esc(l.id)}"></span></label><textarea id="o_${esc(l.id)}" data-k="${esc(l.id)}" placeholder="Escribe aquí una observación para este local…">${esc(OBS[l.id]||'')}</textarea></div>
+  <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
+  rows.map(e=>`<div class="row"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t">${esc(e.t)} ${esc(e.c)}</span><span class="c d">${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b></span></div>`).join('')+`</section>`;
 }
-let tm;$('#q').addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(render,120)});
-$('#marca').addEventListener('change',render);$('#mes').addEventListener('change',render);
-$('#clr').addEventListener('click',()=>{$('#q').value='';$('#marca').value='';$('#mes').value='';render();$('#q').focus()});
-$('#prt').addEventListener('click',()=>print());
+const NOTA='<div class="foot">Las observaciones se guardan en este celular o computadora (no se comparten con otros aparatos).</div>';
+const back=(txt)=>`<button class="bk" data-go="">← ${txt||'Volver al inicio'}</button>`;
+
+function vInicio(){
+  $('#bar').innerHTML='';$('#count').textContent='';
+  $('#main').innerHTML=`<div class="home">
+    <button class="big" data-go="buscar"><span class="ic">🔍</span><b>Buscar un local</b><small>Escribe el nombre y aparece</small></button>
+    <button class="big" data-go="todos"><span class="ic">📋</span><b>Ver todos los locales</b><small>La lista completa</small></button>
+    <button class="big" data-go="marcas"><span class="ic">🏷️</span><b>Ver por marca</b><small>KFC, Juan Valdez, Cajun…</small></button></div>`;
+}
+let LASTQ='';
+function vBuscar(){
+  $('#bar').innerHTML=`${back()}<input id="q" type="search" placeholder="Escribe el nombre del local…  ej: Alborada" autocomplete="off">`;
+  $('#main').innerHTML='<div id="res"></div>';
+  const q=$('#q');q.value=LASTQ;
+  const go=()=>{LASTQ=q.value;
+    const w=norm(q.value).trim().split(/\s+/).filter(Boolean);
+    if(!w.length){$('#count').textContent='';$('#res').innerHTML='<div class="empty">Escribe el nombre del local arriba.<br><span class="mut">Por ejemplo: alborada, mall del sol, K153</span></div>';return}
+    const r=locs.filter(l=>w.every(x=>l.full.includes(x)));
+    $('#count').textContent=`${r.length} ${r.length==1?'local encontrado':'locales encontrados'}`;
+    $('#res').innerHTML=r.length?r.slice(0,60).map(l=>`<button class="it" data-go="local/${esc(l.id)}"><b>${esc(l.nombre)}</b><small>${esc(tc(l.marca))} · ${tc(l.mes)} · ${l.ext.length} extintores</small></button>`).join('')+(r.length>60?'<div class="empty">Hay más resultados. Escribe más letras para acotar.</div>':''):'<div class="empty">No encontré ningún local. Prueba con otra palabra.</div>';
+  };
+  let t;q.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(go,120)});
+  go();setTimeout(()=>q.focus(),50);
+}
+function vTodos(){
+  $('#bar').innerHTML=`${back()}<select id="marca"><option value="">Todas las marcas</option>${marcas.map(m=>`<option value="${esc(m)}">${esc(tc(m))}</option>`).join('')}</select><select id="mes"><option value="">Todos los meses</option>${MESES.map(m=>`<option value="${m}">${tc(m)}</option>`).join('')}</select><button id="prt">Imprimir</button>`;
+  const go=()=>{const m=$('#marca').value,me=$('#mes').value;const r=locs.filter(l=>(!m||l.marca===m)&&(!me||l.mes===me));
+    $('#count').textContent=`${r.length} locales · ${r.reduce((a,l)=>a+l.ext.length,0)} extintores`;$('#main').innerHTML=r.map(l=>cardLocal(l)).join('')+NOTA};
+  $('#marca').addEventListener('change',go);$('#mes').addEventListener('change',go);$('#prt').addEventListener('click',()=>print());go();
+}
+function vMarcas(){
+  $('#bar').innerHTML=back();$('#count').textContent='Toca una marca';
+  $('#main').innerHTML=marcas.map(m=>{const n=locs.filter(l=>l.marca===m).length;return `<button class="it" data-go="marca/${encodeURIComponent(m)}"><b>${esc(tc(m))}</b><small>${n} ${n==1?'local':'locales'}</small></button>`}).join('');
+}
+function vMarca(m){
+  $('#bar').innerHTML=`${back('Volver a las marcas').replace('data-go=""','data-go="marcas"')}<button id="prt">Imprimir</button>`;
+  const r=locs.filter(l=>l.marca===m);$('#count').textContent=`${tc(m)} · ${r.length} ${r.length==1?'local':'locales'}`;
+  $('#main').innerHTML=r.map(l=>cardLocal(l)).join('')+NOTA;$('#prt').addEventListener('click',()=>print());
+}
+function vLocal(id){
+  const l=byId[id];if(!l){location.hash='';return}
+  $('#bar').innerHTML=`${back('Volver').replace('data-go=""','data-go="back"')}<button id="prt">Imprimir</button>`;$('#count').textContent='';
+  $('#main').innerHTML=cardLocal(l)+NOTA;$('#prt').addEventListener('click',()=>print());
+}
+function route(){
+  const h=decodeURIComponent(location.hash.replace(/^#\/?/,''));
+  window.scrollTo(0,0);
+  if(h==='buscar')vBuscar();else if(h==='todos')vTodos();else if(h==='marcas')vMarcas();
+  else if(h.startsWith('marca/'))vMarca(h.slice(6));else if(h.startsWith('local/'))vLocal(h.slice(6));else vInicio();
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;
+  if(g==='back'){history.length>1?history.back():(location.hash='')}else if(g==='')location.hash='';else location.hash='#/'+g.split('/').map((x,i)=>i?encodeURIComponent(decodeURIComponent(x)):x).join('/')});
+window.addEventListener('hashchange',route);
 const tms={};
-$('#main').addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
+document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
   const v=e.target.value;if(v.trim())OBS[k]=v;else delete OBS[k];
-  clearTimeout(tms[k]);tms[k]=setTimeout(()=>{const ok=saveObs();const el=document.querySelector('[data-sv="'+k.replace(/"/g,'')+'"]');if(el){el.textContent=ok?'✓ guardado':'no se pudo guardar';setTimeout(()=>{el.textContent=''},1800)}},400)});
-render();
+  clearTimeout(tms[k]);tms[k]=setTimeout(()=>{const ok=saveObs();const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=ok?'✓ guardado':'no se pudo guardar';setTimeout(()=>{el.textContent=''},1800)}},400)});
+route();
 })();
 </script>
 </body>
