@@ -195,4 +195,5 @@ if h != ver['hash']:
 html = (plantilla.replace('__DATOS__', js).replace('__CIFRADO__', cc)
         .replace('__VERSION__', str(ver['n'])).replace('__FECHAV__', ver.get('fecha', '')))
 open(SALIDA, 'w', encoding='utf-8').write(html)
+open(os.path.join(AQUI, 'v.txt'), 'w').write(str(ver['n']))
 print('Version', ver['n'], '| OK', len(filas), 'extintores,', len({f[2] for f in filas}), 'locales ->', SALIDA)

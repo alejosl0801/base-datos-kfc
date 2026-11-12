@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#922B21">
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>Listado de extintores · Grupo KFC</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -367,10 +368,22 @@ route();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 $('#ver').textContent='v'+APP_V;
 $('#sub').textContent+=' · v'+APP_V;
-try{fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
-  const m=t.match(/const APP_V = (\d+)/);
-  if(m&&+m[1]>APP_V&&!sessionStorage.getItem('kfc_rl_'+m[1])){sessionStorage.setItem('kfc_rl_'+m[1],'1');location.replace(location.pathname+'?v='+m[1]+location.hash)}
-}).catch(()=>{})}catch(e){}
+let RELOAD=false;
+async function chk(){
+  if(RELOAD)return;
+  try{
+    const r=await fetch('v.txt?x='+Date.now(),{cache:'no-store'});const n=parseInt(await r.text());
+    if(n>APP_V){
+      const ae=document.activeElement;if(ae&&ae.matches&&ae.matches('input,textarea')&&ae.value){setTimeout(chk,5000);return}
+      const g='kfc_rl_'+n,c=+(sessionStorage.getItem(g)||0);if(c>=3)return;
+      sessionStorage.setItem(g,c+1);RELOAD=true;
+      location.replace(location.pathname+'?v='+n+'&t='+Date.now()+location.hash);
+    }
+  }catch(e){}
+}
+chk();setInterval(chk,45000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});
+window.addEventListener('online',chk);window.addEventListener('focus',chk);
 })();
 </script>
 </body>
