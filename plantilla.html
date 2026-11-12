@@ -188,13 +188,22 @@ const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function descifrar(clave){
   const raw=b64(CIFRADO),salt=raw.slice(0,16),iv=raw.slice(16,28),ct=raw.slice(28);
   const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(String(clave).toLowerCase().replace(/\s+/g,'')),'PBKDF2',false,['deriveKey']);
-  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
   const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
   return JSON.parse(new TextDecoder().decode(pt));
 }
 async function abrirContactos(clave,silencioso){
-  try{CONT=await descifrar(clave);try{localStorage.setItem('kfc_clave',String(clave).toLowerCase().replace(/\s+/g,''))}catch(e){}return true}
-  catch(e){CONT=null;if(!silencioso)alert('La clave no es correcta. Revisa que no estén las MAYÚSCULAS activadas, o abre el enlace que te mandó Alejandro.');try{if(silencioso)localStorage.removeItem('kfc_clave')}catch(e){}return false}
+  try{
+    const j=await descifrar(clave);CONT=j;
+    try{localStorage.setItem('kfc_clave',String(clave).toLowerCase().replace(/\s+/g,''));localStorage.setItem('kfc_cont',JSON.stringify(j))}catch(e){}
+    return true;
+  }catch(e){
+    if(!silencioso){
+      if(e&&e.name==='OperationError')alert('La clave no es correcta. Revisa que no estén las MAYÚSCULAS activadas, o abre el enlace que te mandó Alejandro.');
+      else alert('Este navegador no pudo abrir los contactos ('+(e&&e.name||'error')+'). Prueba abrir la app con Chrome.');
+    }
+    return false;
+  }
 }
 const tel=t=>t?`<a href="tel:${esc(t.replace(/[^\d+]/g,''))}">${esc(t)}</a>`:'';
 const mail=m=>m?`<a href="mailto:${esc(m)}">${esc(m)}</a>`:'';
@@ -352,7 +361,7 @@ async function route(skipPull){
 }
 document.addEventListener('click',async e=>{const tg=e.target.closest('[data-tg]');if(tg){toggleLoc(tg.closest('.loc'));return}
   const ab=e.target.closest('[data-acc]');if(ab){setAcc(ab.dataset.acc,ab.dataset.v);return}
-  if(e.target.closest('[data-unlock]')){const k=prompt('Escribe la clave de contactos (solo una vez):');if(k&&await abrirContactos(k,false))refreshOpen();return}
+  if(e.target.closest('[data-unlock]')){const bt=e.target.closest('[data-unlock]');const k=prompt('Escribe la clave de contactos (solo una vez):');if(k){bt.textContent='Abriendo contactos…';bt.disabled=true;if(await abrirContactos(k,false))refreshOpen();else{bt.textContent='🔒 Ver datos de contacto del local';bt.disabled=false}}return}
   const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;
   if(g==='back'){history.length>1?history.back():(location.hash='')}else if(g==='')location.hash='';else location.hash='#/'+g.split('/').map((x,i)=>i?encodeURIComponent(decodeURIComponent(x)):x).join('/')});
 window.addEventListener('hashchange',()=>route());
@@ -362,6 +371,7 @@ document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset
   clearTimeout(tms[k]);tms[k]=setTimeout(async()=>{let ok=saveObs();let msg=ok?'✓ guardado':'no se pudo guardar';
     if(SHARED){try{await api('POST',{action:'put',id:k,text:v.trim()?v:''});if(OBS[k])delete OBS[k].p;saveObs();msg='✓ enviada a Alejandro'}catch(er){msg='guardada en tu celular, se enviará cuando haya internet'}}
     const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=msg;const od=[...document.querySelectorAll('[data-od]')].find(x=>x.dataset.od===k);if(od)od.textContent=OBS[k]?'escrita '+fdate(OBS[k].d):'';setTimeout(()=>{el.textContent=''},3500)}},500)});
+try{const cc=localStorage.getItem('kfc_cont');if(cc&&CIFRADO)CONT=JSON.parse(cc)}catch(e){}
 try{const gk=localStorage.getItem('kfc_clave');if(gk&&CIFRADO)abrirContactos(gk,true).then(ok=>{if(ok)refreshOpen()})}catch(e){}
 try{const lr=localStorage.getItem('kfc_last');if(lr&&/^(#\/?)?$/.test(location.hash))history.replaceState(null,'','#/'+lr.split('/').map(encodeURIComponent).join('/'))}catch(e){}
 route();
