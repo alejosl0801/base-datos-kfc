@@ -57,6 +57,20 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 .stt.rec{color:#a11d1d}.stt.man{color:#8a5a00}.stt.ok{color:#157347}
 .ti{margin-right:3px}
 .leg{padding:8px 12px;font-size:12.5px;color:var(--mut);border-top:1px solid var(--line)}
+.row.r-rec{box-shadow:inset 6px 0 0 #c62828!important;background:#ffe1e1!important}
+.row.r-man{box-shadow:inset 6px 0 0 #c98a00!important;background:#fff0c4!important}
+.row.r-ok{box-shadow:inset 6px 0 0 #1f8a4c!important;background:#e3f6ea!important}
+.row.r-atr{box-shadow:inset 6px 0 0 #6d2b00!important;background:#f1dccf!important}
+.row.r-hec{box-shadow:inset 6px 0 0 #9aa3ad!important;background:#eef0f3!important}
+.stt.rec{color:#8f1414}.stt.man{color:#6e4a00}.stt.ok{color:#0f6a38}.stt.atr{color:#5a2300}.stt.hec{color:#5b6470}
+.tp{display:inline-block;border-radius:6px;padding:0 7px;font-weight:700;font-size:.92em}
+.tp-co2{background:#dbeafe;color:#1d4ed8}.tp-pqs{background:#fde2e2;color:#b91c1c}.tp-tk{background:#fef3c7;color:#92400e}
+.cmp{border:1px solid #1f4e8c;background:#fff;color:#1f4e8c;border-radius:8px;padding:2px 10px;font-size:13px;font-weight:700;cursor:pointer;margin-left:6px}
+.dot.atr{background:#7a3400}
+.lbody{animation:fi .18s ease}@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+#up{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;border:0;background:var(--red);color:#fff;font-size:22px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer;z-index:2147483646;display:none}
+@media print{#up{display:none!important}}
+.accb button{padding:9px 22px!important;min-width:60px!important;font-size:17px!important}
 .accb{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
 .accb button{border:2px solid #d4c58f;background:#fff;color:#5b4a00;border-radius:999px;padding:3px 14px;font-size:14px;font-weight:700;cursor:pointer;min-width:46px}
 .accb button.on.si{background:#157347;border-color:#157347;color:#fff}.accb button.on.no{background:#a11d1d;border-color:#a11d1d;color:#fff}.accb button.on.q{background:#8a5a00;border-color:#8a5a00;color:#fff}
@@ -115,8 +129,9 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
   <div class="bar" id="bar"></div>
 </header>
 <div class="count" id="count"></div>
-<main id="main"></main>
-<div class="ver" id="ver"></div>
+<main id="main" role="main"></main>
+<div class="ver" id="ver" aria-hidden="true"></div>
+<button id="up" aria-label="Subir al inicio de la página">↑</button>
 <script>
 const APP_V = __VERSION__, APP_F = "__FECHAV__";
 const DATA = __DATOS__;
@@ -141,15 +156,33 @@ const CFG=DATA.cfg||{};const SHARED=!!CFG.obs_url;
 async function api(method,body){
   const u=CFG.obs_url+(method==='GET'?'?k='+encodeURIComponent(CFG.app_key):'');
   const r=await fetch(u,method==='GET'?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({k:CFG.app_key},body))});
-  if(!r.ok){const e=new Error('http '+r.status);e.status=r.status;throw e}
+  if(!r.ok){const e=new Error('http '+r.status);e.status=r.status;try{e.body=await r.json()}catch(x){}throw e}
   return r.json();
 }
-async function pushPend(){for(const k of Object.keys(OBS)){const o=OBS[k];if(o&&o.p){try{await api('POST',{action:'put',id:k,text:o.t});delete o.p}catch(e){}}}saveObs()}
+async function putObs(k,text){
+  const o=OBS[k];const base=(o&&o.b)||null;
+  try{
+    const r=await api('POST',{action:'put',id:k,text,base});
+    if(OBS[k]){delete OBS[k].p;if(r.d){OBS[k].b=r.d;OBS[k].d=r.d}}
+    return {ok:true,text};
+  }catch(e){
+    if(e.status===409&&e.body&&e.body.cur){
+      const cur=e.body.cur,merged=(!cur.t||String(text).includes(cur.t))?text:cur.t+'\n'+text;
+      OBS[k]={t:merged,d:cur.d,b:cur.d};
+      const r=await api('POST',{action:'put',id:k,text:merged,base:cur.d});
+      if(OBS[k]){OBS[k].b=r.d;OBS[k].d=r.d}
+      saveObs();return {ok:true,text:merged,merged:merged!==text};
+    }
+    throw e;
+  }
+}
+async function pushPend(){for(const k of Object.keys(OBS)){const o=OBS[k];if(o&&o.p){try{await putObs(k,o.t)}catch(e){}}}saveObs()}
 async function pull(){
   if(!SHARED)return false;
   try{await pushPend();const j=await api('GET');const srv=j.items||{};const nu={};
-    for(const k in srv)nu[k]={t:srv[k].t,d:srv[k].d};
+    for(const k in srv)nu[k]={t:srv[k].t,d:srv[k].d,b:srv[k].d};
     for(const k in OBS){const o=OBS[k];if(o&&(o.p||(!srv[k]&&o.d&&Date.now()-new Date(o.d)<120000)))nu[k]=o}
+    for(const k of Object.keys(nu)){if(k.startsWith('ACC_')){const l=byId[k.slice(4)];if(l&&nu[k]&&!nu[k].p&&accBase(l)===nu[k].t){delete nu[k];api('POST',{action:'put',id:k,text:''}).catch(()=>{})}}}
     const ch=JSON.stringify(nu)!==JSON.stringify(OBS);OBS=nu;saveObs();return ch;
   }catch(e){return false}
 }
@@ -157,20 +190,26 @@ const accBase=l=>l.acc||'?';
 const accOv=l=>{const o=OBS['ACC_'+l.id];return o&&o.t?o.t:null};
 const accVal=l=>accOv(l)||accBase(l);
 function accHtml(l){const v=accVal(l),ov=accOv(l)!==null&&accOv(l)!==accBase(l);
-  const b=(x,t,c)=>`<button data-acc="${esc(l.id)}" data-v="${x}" class="${c}${v===x?' on':''}">${t}</button>`;
+  const b=(x,t,c)=>`<button data-acc="${esc(l.id)}" data-v="${x}" class="${c}${v===x?' on':''}" aria-pressed="${v===x}">${t}</button>`;
   return `<div class="acc">Acc. distancia:<span class="accb">${b('SI','Sí','si')}${b('NO','No','no')}${b('?','?','q')}</span><span class="accn" data-accn="${esc(l.id)}">${ov?'(pendiente de confirmar)':''}</span></div>`}
 async function setAcc(id,v){
   const l=byId[id];if(!l)return;const k='ACC_'+id;
-  if(v===accBase(l))delete OBS[k];else OBS[k]={t:v,d:new Date().toISOString(),p:SHARED?1:undefined};
+  if(v===accBase(l))delete OBS[k];else OBS[k]={t:v,d:new Date().toISOString(),b:(OBS[k]||{}).b,p:SHARED?1:undefined};
   saveObs();
-  document.querySelectorAll('[data-acc="'+id.replace(/"/g,'')+'"]').forEach(b=>b.classList.toggle('on',b.dataset.v===accVal(l)));
+  document.querySelectorAll('[data-acc="'+id.replace(/"/g,'')+'"]').forEach(b=>{const on=b.dataset.v===accVal(l);b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))});
   document.querySelectorAll('[data-accn="'+id.replace(/"/g,'')+'"]').forEach(n=>n.textContent=accOv(l)!==null?'(pendiente de confirmar)':'');
-  if(SHARED){try{await api('POST',{action:'put',id:k,text:OBS[k]?OBS[k].t:''});if(OBS[k])delete OBS[k].p;saveObs()}catch(e){}}
+  if(SHARED){try{await putObs(k,OBS[k]?OBS[k].t:'')}catch(e){}saveObs()}
 }
 const SEC=DATA.sec||{};
-const Y=new Date().getFullYear();
-const est=e=>e.y[3]<=Y?'rec':(e.y[1]===Y||e.y[2]===Y)?'man':(e.y[0]===Y?'ok':'');
-const STXT={rec:'Toca recarga',man:'Toca mantenimiento',ok:'Recargado este año'};
+const yr=()=>new Date().getFullYear();
+const mesIdx=()=>new Date().getMonth();
+const mesAct=()=>MESES[mesIdx()];
+const est=(e,l)=>{const Y=yr();const pasado=!!l&&MESES.indexOf(l.mes)<mesIdx();
+  if(e.y[3]<=Y)return pasado?'atr':'rec';
+  if(e.y[1]===Y||e.y[2]===Y)return pasado?'hec':'man';
+  if(e.y[0]===Y)return 'ok';return ''};
+const STXT={rec:'Toca recarga',man:'Toca mantenimiento',ok:'Recargado este año',atr:'Atrasado',hec:'Mantenimiento hecho'};
+const CLSTIPO=t=>t==='CO2'?'co2':t==='PQS'?'pqs':'tk';
 const ICO={'PQS':'🧯','CO2':'❄️','TIPO K':'🍳'};const ic=t=>ICO[t]||'🧯';
 const lev=(a,b,max)=>{if(Math.abs(a.length-b.length)>max)return max+1;let prev=Array.from({length:b.length+1},(_,i)=>i);
   for(let i=1;i<=a.length;i++){const cur=[i];let mn=i;for(let j=1;j<=b.length;j++){const v=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));cur[j]=v;if(v<mn)mn=v}if(mn>max)return max+1;prev=cur}return prev[b.length]};
@@ -223,25 +262,26 @@ function ctBlock(l){
 
 function localBody(l,rows){
   rows=rows||l.ext;
-  return `<div class="lm2">${esc(tc(l.marca))} · ${tc(l.mes)} · ${l.ext.length} ${l.ext.length==1?'extintor':'extintores'}</div>
+  const cn={};l.ext.forEach(e=>{const t=est(e,l)||'-';cn[t]=(cn[t]||0)+1});
+  const fr=[];if(cn.rec)fr.push(cn.rec+' toca recarga');if(cn.man)fr.push(cn.man+' toca mantenimiento');if(cn.atr)fr.push(cn.atr+' atrasado'+(cn.atr>1?'s':''));if(cn.hec)fr.push(cn.hec+' mantenimiento ya hecho');if(cn.ok)fr.push(cn.ok+' ya recargado'+(cn.ok>1?'s':''));
+  return `<div class="lm2">${esc(tc(l.marca))} · ${tc(l.mes)} · ${l.ext.length} ${l.ext.length==1?'extintor':'extintores'}${fr.length?'<br><b>'+fr.join(' · ')+'</b>':''}</div>
   <div class="lx">${accHtml(l)}<label for="o_${esc(l.id)}">Observación <span class="od" data-od="${esc(l.id)}">${OBS[l.id]&&OBS[l.id].d?'escrita '+fdate(OBS[l.id].d):''}</span> <span class="sv" data-sv="${esc(l.id)}"></span></label><textarea id="o_${esc(l.id)}" data-k="${esc(l.id)}" placeholder="Escribe aquí una observación para este local…">${esc((OBS[l.id]||{}).t||'')}</textarea></div>
   ${ctBlock(l)}
   <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
-  rows.map(e=>{const st=est(e);return `<div class="row${st?' r-'+st:''}"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t"><span class="ti">${ic(e.t)}</span>${esc(e.t)} ${esc(e.c)}</span><span class="c d"><span class="ti">${ic(e.t)}</span>${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}${st?`<span class="stt ${st}">${STXT[st]}</span>`:''}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b>${st?` · <b class="stt ${st}" style="display:inline">${STXT[st]}</b>`:''}</span></div>`}).join('')+
-  `<div class="leg">🟥 Toca recarga · 🟨 Toca mantenimiento · 🟩 Recargado este año</div>`;
+  rows.map(e=>{const st=est(e,l);return `<div class="row${st?' r-'+st:''}"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span> <button class="cmp" data-cmp="'+esc(l.id)+'" data-t="'+esc(e.t+' '+e.c)+'">Completar</button>'}</span><span class="t"><span class="ti" aria-hidden="true">${ic(e.t)}</span><span class="tp tp-${CLSTIPO(e.t)}">${esc(e.t)}</span> ${esc(e.c)}</span><span class="c d"><span class="ti" aria-hidden="true">${ic(e.t)}</span><span class="tp tp-${CLSTIPO(e.t)}">${esc(e.t)}</span></span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}${st?`<span class="stt ${st}">${STXT[st]}</span>`:''}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b>${st?` · <b class="stt ${st}" style="display:inline">${STXT[st]}</b>`:''}</span></div>`}).join('')+
+  `<div class="leg">🟥 Toca recarga · 🟨 Toca mantenimiento · 🟩 Recargado este año · ⬜ Mantenimiento ya hecho · 🟫 Atrasado</div>`;
 }
 function cardLocal(l,opts){
   opts=opts||{};
-  const rec=l.ext.some(e=>est(e)==='rec'),man=l.ext.some(e=>est(e)==='man');
-  return `<section class="loc${opts.open?' open':''}" data-id="${esc(l.id)}"><button class="lsum" data-tg="${esc(l.id)}"><span>${esc(l.nombre)}</span><span class="lm">${rec?'<i class="dot rec"></i>':''}${man?'<i class="dot man"></i>':''}<span class="ar">▸</span></span></button><div class="lbody" ${opts.open?'data-r="1"':'hidden'}>${opts.open?localBody(l):''}</div></section>`;
+  const rec=l.ext.some(e=>est(e,l)==='rec'||est(e,l)==='atr'),man=l.ext.some(e=>est(e,l)==='man');
+  return `<section class="loc${opts.open?' open':''}" data-id="${esc(l.id)}"><button class="lsum" data-tg="${esc(l.id)}" aria-expanded="${opts.open?'true':'false'}"><span>${esc(l.nombre)}</span><span class="lm">${rec?'<i class="dot rec" role="img" aria-label="Toca recarga"></i>':''}${man?'<i class="dot man" role="img" aria-label="Toca mantenimiento"></i>':''}<span class="ar" aria-hidden="true">▸</span></span></button><div class="lbody" ${opts.open?'data-r="1"':'hidden'}>${opts.open?localBody(l):''}</div></section>`;
 }
-function toggleLoc(sec){const b=sec.querySelector('.lbody');if(!b.dataset.r){b.innerHTML=localBody(byId[sec.dataset.id]);b.dataset.r='1'}b.hidden=!b.hidden;sec.classList.toggle('open',!b.hidden)}
+function toggleLoc(sec){const b=sec.querySelector('.lbody');if(!b.dataset.r){b.innerHTML=localBody(byId[sec.dataset.id]);b.dataset.r='1'}b.hidden=!b.hidden;sec.classList.toggle('open',!b.hidden);const bt=sec.querySelector('.lsum');if(bt)bt.setAttribute('aria-expanded',String(!b.hidden))}
 function refreshOpen(){document.querySelectorAll('.loc.open .lbody').forEach(b=>{b.innerHTML=localBody(byId[b.parentNode.dataset.id])})}
 function abrirTodo(){document.querySelectorAll('.loc').forEach(sec=>{const b=sec.querySelector('.lbody');if(!b.dataset.r){b.innerHTML=localBody(byId[sec.dataset.id]);b.dataset.r='1'}b.hidden=false;sec.classList.add('open')})}
 const NOTA=SHARED?'<div class="foot">Las observaciones le llegan a Alejandro. Cuando las resuelve, desaparecen de la lista.</div>':'<div class="foot">Las observaciones se guardan en este celular o computadora (no se comparten con otros aparatos).</div>';
 const back=(txt)=>`<button class="bk" data-go="">← ${txt||'Volver al inicio'}</button>`;
 
-const MES_ACT=MESES[new Date().getMonth()];
 let DEF=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEF=e;if(/^(#\/?)?$/.test(location.hash)||location.hash==='#/instalar')route()});
 window.addEventListener('appinstalled',()=>{DEF=null;route()});
@@ -249,17 +289,17 @@ const STANDALONE=()=>window.matchMedia('(display-mode: standalone)').matches||na
 const IOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 function instBlock(){
   if(STANDALONE())return'';
-  if(DEF)return '<div class="inst"><button id="doInst">📲 Instalar en mi celular</button><p>Queda un ícono en la pantalla, como cualquier app.</p></div>';
+  if(DEF)return '<div class="inst"><button id="doInst">📲 Instalar la app</button><p>Queda un ícono en la pantalla, como cualquier app.</p></div>';
   if(IOS)return '<div class="inst"><p><b>Para tenerla como app:</b> toca el botón <b>Compartir</b> (cuadrito con flecha) y luego <b>Añadir a pantalla de inicio</b>.</p></div>';
   return '';
 }
 function vInicio(){
   $('#bar').innerHTML='';$('#count').textContent='';
-  const nm=locs.filter(l=>l.mes===MES_ACT).length;
+  const nm=locs.filter(l=>l.mes===mesAct()).length;
   const no=Object.keys(OBS).filter(k=>OBS[k]&&OBS[k].t&&byId[k]).length;
   $('#main').innerHTML=`<div class="home">${instBlock()}
     <button class="big" data-go="buscar"><span class="ic">🔍</span><b>Buscar un local</b><small>Escribe el nombre y aparece</small></button>
-    <button class="big" data-go="mes"><span class="ic">📅</span><b>Locales de este mes</b><small>${tc(MES_ACT)} · ${nm} ${nm==1?'local':'locales'}</small></button>
+    <button class="big" data-go="mes"><span class="ic">📅</span><b>Locales de este mes</b><small>${tc(mesAct())} · ${nm} ${nm==1?'local':'locales'}</small></button>
     <button class="big" data-go="todos"><span class="ic">📋</span><b>Ver todos los locales</b><small>La lista completa</small></button>
     <button class="big" data-go="marcas"><span class="ic">🏷️</span><b>Ver por marca</b><small>KFC, Juan Valdez, Cajun…</small></button>
     <button class="big sec" data-go="obs"><span class="ic">📝</span><b>Mis observaciones</b><small>${no?no+(no==1?' pendiente':' pendientes'):'Aquí aparecen las que escribas'}</small></button></div>`;
@@ -270,7 +310,7 @@ function vInstalar(){
   $('#bar').innerHTML=back();$('#count').textContent='';
   let h;
   if(STANDALONE())h='<div class="stp"><b>Ya está instalada ✅</b><br>Búscala por su ícono rojo con una K en la pantalla de inicio.</div>';
-  else if(DEF)h='<div class="inst"><button id="doInst">📲 Instalar en mi celular</button><p>Toca el botón y luego <b>Instalar</b>.</p></div>';
+  else if(DEF)h='<div class="inst"><button id="doInst">📲 Instalar la app</button><p>Toca el botón y luego <b>Instalar</b>.</p></div>';
   else if(IOS)h='<div class="stp"><b>En iPhone:</b><br>1. Toca el botón <b>Compartir</b> (cuadrito con flecha hacia arriba)<br>2. Toca <b>Añadir a pantalla de inicio</b><br>3. Toca <b>Añadir</b></div>';
   else h='<div class="stp"><b>En Android:</b><br>1. Toca los <b>tres puntitos ⋮</b> arriba a la derecha<br>2. Toca <b>Instalar aplicación</b> (o <b>Añadir a pantalla de inicio</b>)<br>3. Toca <b>Instalar</b></div>';
   $('#main').innerHTML='<div class="home">'+h+'</div>';
@@ -296,8 +336,8 @@ async function vAdmin(){
 
 function vMes(){
   $('#bar').innerHTML=`${back()}<button id="prt">Imprimir</button>`;
-  const r=locs.filter(l=>l.mes===MES_ACT);
-  $('#count').textContent=`${tc(MES_ACT)} · ${r.length} ${r.length==1?'local':'locales'} · ${r.reduce((a,l)=>a+l.ext.length,0)} extintores`;
+  const r=locs.filter(l=>l.mes===mesAct());
+  $('#count').textContent=`${tc(mesAct())} · ${r.length} ${r.length==1?'local':'locales'} · ${r.reduce((a,l)=>a+l.ext.length,0)} extintores`;
   const g={};r.forEach(l=>{const k=SEC[l.nombre]||'Otros';(g[k]=g[k]||[]).push(l)});
   $('#main').innerHTML=(r.length?Object.keys(g).sort((a,b)=>a.localeCompare(b,'es')).map(k=>`<div class="gh">${esc(k)} <span>(${g[k].length})</span></div>`+g[k].map(l=>cardLocal(l)).join('')).join(''):'<div class="empty">Este mes no hay locales.</div>')+NOTA;$('#prt').addEventListener('click',()=>{abrirTodo();print()});
 }
@@ -316,7 +356,7 @@ function vObs(){
 
 let LASTQ='';
 function vBuscar(){
-  $('#bar').innerHTML=`${back()}<input id="q" type="search" placeholder="Escribe el nombre del local…  ej: Alborada" autocomplete="off">`;
+  $('#bar').innerHTML=`${back()}<input id="q" type="search" placeholder="Escribe el nombre del local…  ej: Alborada" autocomplete="off" aria-label="Buscar un local">`;
   $('#main').innerHTML='<div id="res"></div>';
   const q=$('#q');q.value=LASTQ;
   const go=()=>{LASTQ=q.value;
@@ -362,22 +402,29 @@ async function route(skipPull){
 }
 document.addEventListener('click',async e=>{const tg=e.target.closest('[data-tg]');if(tg){toggleLoc(tg.closest('.loc'));return}
   const ab=e.target.closest('[data-acc]');if(ab){setAcc(ab.dataset.acc,ab.dataset.v);return}
+  const cp=e.target.closest('[data-cmp]');if(cp){const ta=document.getElementById('o_'+cp.dataset.cmp);if(ta){if(!ta.value.trim())ta.value='Ubicación del extintor '+cp.dataset.t+': ';ta.scrollIntoView({block:'center'});ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}return}
   if(e.target.closest('[data-unlock]')){const bt=e.target.closest('[data-unlock]');const k=prompt('Escribe la clave de contactos (solo una vez):');if(k){bt.textContent='Abriendo contactos…';bt.disabled=true;if(await abrirContactos(k,false))refreshOpen();else{bt.textContent='🔒 Ver datos de contacto del local';bt.disabled=false}}return}
   const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;
   if(g==='back'){history.length>1?history.back():(location.hash='')}else if(g==='')location.hash='';else location.hash='#/'+g.split('/').map((x,i)=>i?encodeURIComponent(decodeURIComponent(x)):x).join('/')});
 window.addEventListener('hashchange',()=>route());
 const tms={};
 document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
-  const v=e.target.value;if(v.trim())OBS[k]={t:v,d:new Date().toISOString(),p:SHARED?1:undefined};else delete OBS[k];
+  const v=e.target.value;if(v.trim())OBS[k]={t:v,d:new Date().toISOString(),b:(OBS[k]||{}).b,p:SHARED?1:undefined};else delete OBS[k];
   clearTimeout(tms[k]);tms[k]=setTimeout(async()=>{let ok=saveObs();let msg=ok?'✓ guardado':'no se pudo guardar';
-    if(SHARED){try{await api('POST',{action:'put',id:k,text:v.trim()?v:''});if(OBS[k])delete OBS[k].p;saveObs();msg='✓ enviada a Alejandro'}catch(er){msg='guardada en tu celular, se enviará cuando haya internet'}}
+    if(SHARED){try{const rr=await putObs(k,v.trim()?v:'');msg='✓ enviada a Alejandro';if(rr&&rr.merged){msg='✓ se juntó con un cambio de otra persona';const ta=document.getElementById('o_'+k);if(ta)ta.value=rr.text}}catch(er){msg='guardada en tu celular, se enviará cuando haya internet'}}
     const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=msg;const od=[...document.querySelectorAll('[data-od]')].find(x=>x.dataset.od===k);if(od)od.textContent=OBS[k]?'escrita '+fdate(OBS[k].d):'';setTimeout(()=>{el.textContent=''},3500)}},500)});
-try{const cc=localStorage.getItem('kfc_cont');if(cc&&CIFRADO)CONT=JSON.parse(cc)}catch(e){}
-try{const gk=localStorage.getItem('kfc_clave');if(gk&&CIFRADO)abrirContactos(gk,true).then(ok=>{if(ok)refreshOpen()})}catch(e){}
+try{if(!CIFRADO){localStorage.removeItem('kfc_clave');localStorage.removeItem('kfc_cont')}else{const cc=localStorage.getItem('kfc_cont');if(cc)CONT=JSON.parse(cc);const gk=localStorage.getItem('kfc_clave');if(gk)abrirContactos(gk,true).then(ok=>{if(ok)refreshOpen()})}}catch(e){}
 try{const lr=localStorage.getItem('kfc_last');if(lr&&/^(#\/?)?$/.test(location.hash))history.replaceState(null,'','#/'+lr.split('/').map(encodeURIComponent).join('/'))}catch(e){}
 route();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 $('#ver').textContent='v'+APP_V;
+if(SHARED){pushPend();window.addEventListener('online',pushPend);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pushPend()})}
+let MES_CARGADO=mesAct();
+const alVolver=()=>{if(mesAct()!==MES_CARGADO){MES_CARGADO=mesAct();const h=location.hash.replace(/^#\/?/,'');if(h===''||h==='mes')route(true)}};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)alVolver()});window.addEventListener('focus',alVolver);
+const up=document.getElementById('up');
+window.addEventListener('scroll',()=>{up.style.display=window.scrollY>700?'block':'none'},{passive:true});
+up.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
 $('#sub').textContent+=' · v'+APP_V;
 let RELOAD=false;
 async function chk(){

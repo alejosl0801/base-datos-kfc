@@ -141,6 +141,8 @@ REGLAS = [
     ('MALL SUR', 'Guayaquil · Mall del Sur'), ('MALL DEL NORTE', 'Guayaquil · Mall del Norte'),
     ('URDESA', 'Guayaquil · Urdesa'), ('KENNEDY', 'Guayaquil · Kennedy'), ('FORTIN', 'Guayaquil · El Fortín'),
     ('PORTETE', 'Guayaquil · Portete'), ('DOMINGO COMIN', 'Guayaquil · Domingo Comín'), ('9 DE OCTUBRE', 'Guayaquil · Centro'),
+    ('BOYACA', 'Guayaquil · Centro'), ('CENTENARIO', 'Guayaquil · Centro'),
+    ('PENAS', 'Guayaquil · Las Peñas'), ('VILLAGE', 'Guayaquil · Village Plaza'),
     ('DURAN', 'Durán'),
 ]
 
