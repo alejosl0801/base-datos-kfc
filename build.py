@@ -109,6 +109,64 @@ def contactos():
     return out
 
 
+
+
+import unicodedata
+
+
+def _n(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', str(s).upper()) if unicodedata.category(c) != 'Mn')
+
+
+REGLAS = [
+    ('GRAN PIAZZA', 'Machala · Gran Piazza'), ('MACHALA', 'Machala'),
+    ('SALINAS', 'Salinas / Santa Elena'), ('SANTA ELENA', 'Salinas / Santa Elena'), ('PENINSULA', 'Salinas / Santa Elena'),
+    ('PLAYAS', 'Playas'), ('VINCES', 'Vinces'), ('VENTANAS', 'Ventanas'), ('BABAHOYO', 'Babahoyo'),
+    ('QUEVEDO', 'Quevedo'), ('MILAGRO', 'Milagro'), ('SAMBORONDON', 'Samborondón'),
+    ('VIA DAULE', 'Guayaquil · Vía a Daule'), ('KM 9', 'Guayaquil · Vía a Daule'),
+    ('PLAZA PACIFICO DAULE', 'Daule'), ('SHOPPING DAULE', 'Daule'), ('DAULE', 'Daule'),
+    ('VIA A LA COSTA', 'Guayaquil · Vía a la Costa'),
+    ('EL DORADO', 'Guayaquil · Riocentro El Dorado'), ('DORADO', 'Guayaquil · Riocentro El Dorado'),
+    ('RIO CENTRO NORTE', 'Guayaquil · Riocentro Norte'), ('RIOCENTRO NORTE', 'Guayaquil · Riocentro Norte'),
+    ('RIO CENTRO SUR', 'Guayaquil · Riocentro Sur'), ('RIOCENTRO SUR', 'Guayaquil · Riocentro Sur'),
+    ('CEIBOS', 'Guayaquil · Ceibos'),
+    ('MALL DEL SOL', 'Guayaquil · Mall del Sol'), ('MALL EL SOL', 'Guayaquil · Mall del Sol'),
+    ('MALL DEL SUR', 'Guayaquil · Mall del Sur'), ('CITY MALL', 'Guayaquil · City Mall'),
+    ('SAN MARINO', 'Guayaquil · San Marino'), ('POLICENTRO', 'Guayaquil · Policentro'),
+    ('ALBORADA', 'Guayaquil · Alborada'), ('BUIJO', 'Guayaquil · Buijo / Ciudad Celeste'),
+    ('AEROPUERTO', 'Guayaquil · Aeropuerto'), ('PREEMB', 'Guayaquil · Aeropuerto'), ('ISLA EXP', 'Guayaquil · Aeropuerto'),
+    ('CAFE ASTORIA', 'Guayaquil · Aeropuerto'), ('INTERNACIONAL', 'Guayaquil · Aeropuerto'),
+    ('TERMINAL', 'Guayaquil · Terminal Terrestre'), ('PUNTILLA', 'Guayaquil · Puntilla'),
+    ('MALECON', 'Guayaquil · Malecón 2000'), ('MALL DEL RIO', 'Guayaquil · Mall del Río'),
+    ('MALL SUR', 'Guayaquil · Mall del Sur'), ('MALL DEL NORTE', 'Guayaquil · Mall del Norte'),
+    ('URDESA', 'Guayaquil · Urdesa'), ('KENNEDY', 'Guayaquil · Kennedy'), ('FORTIN', 'Guayaquil · El Fortín'),
+    ('PORTETE', 'Guayaquil · Portete'), ('DOMINGO COMIN', 'Guayaquil · Domingo Comín'), ('9 DE OCTUBRE', 'Guayaquil · Centro'),
+    ('DURAN', 'Durán'),
+]
+
+
+def sector(nombre, region):
+    t = _n(nombre)
+    for k, v in REGLAS:
+        if k in t:
+            return v
+    r = _n(region or '')
+    if not r or r.startswith('GUAYAQUIL'):
+        return 'Guayaquil · Otros' if r else 'Otros'
+    return re.sub(r'\s*\(.*\)', '', region).title()
+
+
+sec = {}
+_lst = {}
+if os.path.exists(LISTADO):
+    _lw = openpyxl.load_workbook(LISTADO, data_only=True)
+    for _row in _lw['LOCALES GKFC 2022'].iter_rows(min_row=2, values_only=True):
+        _k = kcode(_row[1])
+        if _k and _row[6]:
+            _lst[_k] = _row[6]
+for _f in filas:
+    sec[_f[2]] = sector(_f[2], _lst.get(kcode(_f[1])))
+
 cc = ''
 cont = {}
 if os.path.exists(CLAVE):
@@ -123,7 +181,7 @@ cfg_path = os.path.join(AQUI, 'config.json')
 cfg = json.load(open(cfg_path)) if os.path.exists(cfg_path) else {'obs_url': '', 'app_key': ''}
 
 mtime = datetime.datetime.fromtimestamp(os.path.getmtime(XLSX))
-datos = {'actualizado': mtime.strftime('%d/%m/%Y %H:%M'), 'acc': acc, 'cfg': cfg, 'extintores': filas}
+datos = {'actualizado': mtime.strftime('%d/%m/%Y %H:%M'), 'acc': acc, 'sec': sec, 'cfg': cfg, 'extintores': filas}
 js = json.dumps(datos, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
 
 plantilla = open(PLANTILLA, encoding='utf-8').read()

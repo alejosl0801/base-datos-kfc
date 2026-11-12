@@ -38,6 +38,23 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 .acc b.si{background:#d9f2e3;color:#157347}.acc b.no{background:#fbdcdc;color:#a11d1d}.acc b.q{background:#fdecc8;color:#8a5a00}
 .lx label{display:block;font-size:12px;font-weight:700;color:#6b4e00;text-transform:uppercase;margin-bottom:3px}
 .lx textarea{width:100%;min-height:48px;border:1px solid #e0cf9a;border-radius:8px;padding:8px 10px;font:inherit;font-size:15px;resize:vertical;background:#fff}
+.lsum{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;border:0;background:var(--red);color:#fff;padding:13px 14px;font:inherit;font-weight:700;font-size:16px;text-align:left;cursor:pointer}
+.lsum .lm{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.lsum .ar{transition:transform .15s;font-size:15px}
+.loc.open .lsum .ar{transform:rotate(90deg)}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid #fff}
+.dot.rec{background:#ff5a5a}.dot.man{background:#ffc83d}
+.lbody[hidden]{display:none}
+.lm2{padding:8px 12px;color:var(--mut);font-size:13.5px;background:#fafbfc;border-bottom:1px solid var(--line)}
+.gh{margin:18px 2px 4px;font-weight:800;color:var(--red);font-size:15px;text-transform:uppercase;letter-spacing:.3px}
+.gh span{color:var(--mut);font-weight:600}
+.row.r-rec{box-shadow:inset 5px 0 0 #d33;background:#fff4f4!important}
+.row.r-man{box-shadow:inset 5px 0 0 #e0a100;background:#fffaec!important}
+.row.r-ok{box-shadow:inset 5px 0 0 #2e9e5b;background:#f2fbf5!important}
+.stt{display:block;font-size:11.5px;font-weight:700;line-height:1.1}
+.stt.rec{color:#a11d1d}.stt.man{color:#8a5a00}.stt.ok{color:#157347}
+.ti{margin-right:3px}
+.leg{padding:8px 12px;font-size:12.5px;color:var(--mut);border-top:1px solid var(--line)}
 .accb{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
 .accb button{border:2px solid #d4c58f;background:#fff;color:#5b4a00;border-radius:999px;padding:3px 14px;font-size:14px;font-weight:700;cursor:pointer;min-width:46px}
 .accb button.on.si{background:#157347;border-color:#157347;color:#fff}.accb button.on.no{background:#a11d1d;border-color:#a11d1d;color:#fff}.accb button.on.q{background:#8a5a00;border-color:#8a5a00;color:#fff}
@@ -55,7 +72,15 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
   .row>.y{grid-area:y;color:var(--mut);font-size:13px;display:block}
   .row>.d{display:none}
 }
-@media print{.lx textarea{border:0;padding:0;background:none;resize:none}header{position:static;background:#fff;color:#000;box-shadow:none}.bar{display:none}.loc{break-inside:avoid}.lh{background:#ddd;color:#000}}
+@media(max-width:700px){
+  html,body{font-size:18px}
+  .row{font-size:17px}.row>.y{font-size:14.5px}
+  .lsum{font-size:18px;padding:16px 14px}
+  .bar input{font-size:19px}.bar select,.bar button{font-size:17px}
+  .ct{font-size:16px}.lx textarea{font-size:17px}.accb button{font-size:16px;padding:5px 16px}
+  .big b{font-size:22px}.it b{font-size:18px}
+}
+@media print{.lbody[hidden]{display:block!important}.lx textarea{border:0;padding:0;background:none;resize:none}header{position:static;background:#fff;color:#000;box-shadow:none}.bar{display:none}.loc{break-inside:avoid}.lh{background:#ddd;color:#000}}
 
 .home{display:flex;flex-direction:column;gap:14px;padding:18px 4px}
 .big{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"i b" "i s";column-gap:14px;align-items:center;text-align:left;background:#fff;border:2px solid var(--line);border-radius:16px;padding:22px 18px;cursor:pointer;font:inherit;color:var(--ink)}
@@ -140,10 +165,17 @@ async function setAcc(id,v){
   document.querySelectorAll('[data-accn="'+id.replace(/"/g,'')+'"]').forEach(n=>n.textContent=accOv(l)!==null?'(pendiente de confirmar)':'');
   if(SHARED){try{await api('POST',{action:'put',id:k,text:OBS[k]?OBS[k].t:''});if(OBS[k])delete OBS[k].p;saveObs()}catch(e){}}
 }
+const SEC=DATA.sec||{};
+const Y=new Date().getFullYear();
+const est=e=>e.y[3]<=Y?'rec':(e.y[1]===Y||e.y[2]===Y)?'man':(e.y[0]===Y?'ok':'');
+const STXT={rec:'Toca recarga',man:'Toca mantenimiento',ok:'Recargado este año'};
+const ICO={'PQS':'🧯','CO2':'❄️','TIPO K':'🍳'};const ic=t=>ICO[t]||'🧯';
+const lev=(a,b,max)=>{if(Math.abs(a.length-b.length)>max)return max+1;let prev=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){const cur=[i];let mn=i;for(let j=1;j<=b.length;j++){const v=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));cur[j]=v;if(v<mn)mn=v}if(mn>max)return max+1;prev=cur}return prev[b.length]};
 const okey=l=>l.codigo==='PENDIENTE'?l.nombre:l.codigo;
 E.forEach(r=>{let l=idx[r[2]];if(!l){l=idx[r[2]]={marca:r[0],codigo:r[1],nombre:r[2],mes:r[3],acc:(DATA.acc||{})[r[2]]||'?',ext:[]};locs.push(l)}
   l.ext.push({u:r[4],t:r[5],c:r[6],y:[r[7],r[8],r[9],r[10]],b:norm([r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]].join(' '))})});
-locs.forEach(l=>{l.id=okey(l);l.blob=norm([l.marca,l.codigo,l.nombre,l.mes].join(' '));l.full=l.blob+' '+l.ext.map(e=>e.b).join(' ')});
+locs.forEach(l=>{l.id=okey(l);l.flat=norm(l.nombre+l.marca+l.mes).replace(/\s+/g,'');l.toks=[...new Set(norm(l.nombre+' '+l.marca+' '+l.mes+' '+l.ext.map(e=>e.u+' '+e.t+' '+e.c).join(' ')).split(/[^a-z0-9]+/).filter(x=>x.length>=3))];l.blob=norm([l.marca,l.codigo,l.nombre,l.mes].join(' '));l.full=l.blob+' '+l.ext.map(e=>e.b).join(' ')});
 const marcas=[...new Set(locs.map(l=>l.marca))];
 const byId={};locs.forEach(l=>byId[l.id]=l);
 $('#sub').textContent=`${locs.length} locales · ${E.length} extintores · actualizado ${DATA.actualizado}`;
@@ -178,14 +210,23 @@ function ctBlock(l){
   return `<div class="ct"><h4>Datos de contacto</h4>${ln.join('<br>')}</div>`;
 }
 
-function cardLocal(l,rows){
+function localBody(l,rows){
   rows=rows||l.ext;
-  return `<section class="loc"><div class="lh"><span>${esc(l.nombre)}</span><span>${esc(tc(l.marca))} · ${tc(l.mes)}</span></div>
+  return `<div class="lm2">${esc(tc(l.marca))} · ${tc(l.mes)} · ${l.ext.length} ${l.ext.length==1?'extintor':'extintores'}</div>
   <div class="lx">${accHtml(l)}<label for="o_${esc(l.id)}">Observación <span class="od" data-od="${esc(l.id)}">${OBS[l.id]&&OBS[l.id].d?'escrita '+fdate(OBS[l.id].d):''}</span> <span class="sv" data-sv="${esc(l.id)}"></span></label><textarea id="o_${esc(l.id)}" data-k="${esc(l.id)}" placeholder="Escribe aquí una observación para este local…">${esc((OBS[l.id]||{}).t||'')}</textarea></div>
   ${ctBlock(l)}
   <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
-  rows.map(e=>`<div class="row"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t">${esc(e.t)} ${esc(e.c)}</span><span class="c d">${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b></span></div>`).join('')+`</section>`;
+  rows.map(e=>{const st=est(e);return `<div class="row${st?' r-'+st:''}"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t"><span class="ti">${ic(e.t)}</span>${esc(e.t)} ${esc(e.c)}</span><span class="c d"><span class="ti">${ic(e.t)}</span>${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}${st?`<span class="stt ${st}">${STXT[st]}</span>`:''}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b>${st?` · <b class="stt ${st}" style="display:inline">${STXT[st]}</b>`:''}</span></div>`}).join('')+
+  `<div class="leg">🟥 Toca recarga · 🟨 Toca mantenimiento · 🟩 Recargado este año</div>`;
 }
+function cardLocal(l,opts){
+  opts=opts||{};
+  const rec=l.ext.some(e=>est(e)==='rec'),man=l.ext.some(e=>est(e)==='man');
+  return `<section class="loc${opts.open?' open':''}" data-id="${esc(l.id)}"><button class="lsum" data-tg="${esc(l.id)}"><span>${esc(l.nombre)}</span><span class="lm">${rec?'<i class="dot rec"></i>':''}${man?'<i class="dot man"></i>':''}<span class="ar">▸</span></span></button><div class="lbody" ${opts.open?'data-r="1"':'hidden'}>${opts.open?localBody(l):''}</div></section>`;
+}
+function toggleLoc(sec){const b=sec.querySelector('.lbody');if(!b.dataset.r){b.innerHTML=localBody(byId[sec.dataset.id]);b.dataset.r='1'}b.hidden=!b.hidden;sec.classList.toggle('open',!b.hidden)}
+function refreshOpen(){document.querySelectorAll('.loc.open .lbody').forEach(b=>{b.innerHTML=localBody(byId[b.parentNode.dataset.id])})}
+function abrirTodo(){document.querySelectorAll('.loc').forEach(sec=>{const b=sec.querySelector('.lbody');if(!b.dataset.r){b.innerHTML=localBody(byId[sec.dataset.id]);b.dataset.r='1'}b.hidden=false;sec.classList.add('open')})}
 const NOTA=SHARED?'<div class="foot">Las observaciones le llegan a Alejandro. Cuando las resuelve, desaparecen de la lista.</div>':'<div class="foot">Las observaciones se guardan en este celular o computadora (no se comparten con otros aparatos).</div>';
 const back=(txt)=>`<button class="bk" data-go="">← ${txt||'Volver al inicio'}</button>`;
 
@@ -246,7 +287,8 @@ function vMes(){
   $('#bar').innerHTML=`${back()}<button id="prt">Imprimir</button>`;
   const r=locs.filter(l=>l.mes===MES_ACT);
   $('#count').textContent=`${tc(MES_ACT)} · ${r.length} ${r.length==1?'local':'locales'} · ${r.reduce((a,l)=>a+l.ext.length,0)} extintores`;
-  $('#main').innerHTML=(r.length?r.map(l=>cardLocal(l)).join(''):'<div class="empty">Este mes no hay locales.</div>')+NOTA;$('#prt').addEventListener('click',()=>print());
+  const g={};r.forEach(l=>{const k=SEC[l.nombre]||'Otros';(g[k]=g[k]||[]).push(l)});
+  $('#main').innerHTML=(r.length?Object.keys(g).sort((a,b)=>a.localeCompare(b,'es')).map(k=>`<div class="gh">${esc(k)} <span>(${g[k].length})</span></div>`+g[k].map(l=>cardLocal(l)).join('')).join(''):'<div class="empty">Este mes no hay locales.</div>')+NOTA;$('#prt').addEventListener('click',()=>{abrirTodo();print()});
 }
 function vObs(){
   $('#bar').innerHTML=`${back()}<input id="q" type="search" placeholder="Buscar en mis observaciones…" autocomplete="off">`;
@@ -269,9 +311,11 @@ function vBuscar(){
   const go=()=>{LASTQ=q.value;
     const w=norm(q.value).trim().split(/\s+/).filter(Boolean);
     if(!w.length){$('#count').textContent='';$('#res').innerHTML='<div class="empty">Escribe el nombre del local arriba.<br><span class="mut">Por ejemplo: alborada, mall del sol, K153</span></div>';return}
-    const r=locs.filter(l=>w.every(x=>l.full.includes(x)));
+    const fq=w.join('');
+    let r=locs.filter(l=>w.every(x=>l.full.includes(x))||l.flat.includes(fq));
+    if(!r.length)r=locs.filter(l=>w.every(x=>x.length>=3&&(l.full.includes(x)||l.toks.some(t=>lev(t,x,x.length>=7?2:1)<=(x.length>=7?2:1)))));
     $('#count').textContent=`${r.length} ${r.length==1?'local encontrado':'locales encontrados'}`;
-    $('#res').innerHTML=r.length?r.slice(0,60).map(l=>`<button class="it" data-go="local/${esc(l.id)}"><b>${esc(l.nombre)}</b><small>${esc(tc(l.marca))} · ${tc(l.mes)} · ${l.ext.length} extintores</small></button>`).join('')+(r.length>60?'<div class="empty">Hay más resultados. Escribe más letras para acotar.</div>':''):'<div class="empty">No encontré ningún local. Prueba con otra palabra.</div>';
+    $('#res').innerHTML=r.length?r.slice(0,60).map(l=>cardLocal(l,{open:r.length===1})).join('')+(r.length>60?'<div class="empty">Hay más resultados. Escribe más letras para acotar.</div>':''):'<div class="empty">No encontré ningún local. Prueba con otra palabra.</div>';
   };
   let t;q.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(go,120)});
   go();setTimeout(()=>q.focus(),50);
@@ -280,7 +324,7 @@ function vTodos(){
   $('#bar').innerHTML=`${back()}<select id="marca"><option value="">Todas las marcas</option>${marcas.map(m=>`<option value="${esc(m)}">${esc(tc(m))}</option>`).join('')}</select><select id="mes"><option value="">Todos los meses</option>${MESES.map(m=>`<option value="${m}">${tc(m)}</option>`).join('')}</select><button id="prt">Imprimir</button>`;
   const go=()=>{const m=$('#marca').value,me=$('#mes').value;const r=locs.filter(l=>(!m||l.marca===m)&&(!me||l.mes===me));
     $('#count').textContent=`${r.length} locales · ${r.reduce((a,l)=>a+l.ext.length,0)} extintores`;$('#main').innerHTML=r.map(l=>cardLocal(l)).join('')+NOTA};
-  $('#marca').addEventListener('change',go);$('#mes').addEventListener('change',go);$('#prt').addEventListener('click',()=>print());go();
+  $('#marca').addEventListener('change',go);$('#mes').addEventListener('change',go);$('#prt').addEventListener('click',()=>{abrirTodo();print()});go();
 }
 function vMarcas(){
   $('#bar').innerHTML=back();$('#count').textContent='Toca una marca';
@@ -289,23 +333,25 @@ function vMarcas(){
 function vMarca(m){
   $('#bar').innerHTML=`${back('Volver a las marcas').replace('data-go=""','data-go="marcas"')}<button id="prt">Imprimir</button>`;
   const r=locs.filter(l=>l.marca===m);$('#count').textContent=`${tc(m)} · ${r.length} ${r.length==1?'local':'locales'}`;
-  $('#main').innerHTML=r.map(l=>cardLocal(l)).join('')+NOTA;$('#prt').addEventListener('click',()=>print());
+  $('#main').innerHTML=r.map(l=>cardLocal(l)).join('')+NOTA;$('#prt').addEventListener('click',()=>{abrirTodo();print()});
 }
 function vLocal(id){
   const l=byId[id];if(!l){location.hash='';return}
   $('#bar').innerHTML=`${back('Volver').replace('data-go=""','data-go="back"')}<button id="prt">Imprimir</button>`;$('#count').textContent='';
-  $('#main').innerHTML=cardLocal(l)+NOTA;$('#prt').addEventListener('click',()=>print());
+  $('#main').innerHTML=cardLocal(l,{open:true})+NOTA;$('#prt').addEventListener('click',()=>{abrirTodo();print()});
 }
 async function route(skipPull){
   const h=decodeURIComponent(location.hash.replace(/^#\/?/,''));
   if(h.startsWith('clave/')){const ok=await abrirContactos(h.slice(6),false);location.replace(location.pathname+(ok?'#/':'#/'));return}
   window.scrollTo(0,0);
+  if(!h.startsWith('clave/')&&h!=='instalar'&&h!=='admin'){try{localStorage.setItem('kfc_last',h)}catch(e){}}
   if(!skipPull&&SHARED&&(h===''||h==='obs'||h==='admin'))pull().then(ch=>{if(ch&&decodeURIComponent(location.hash.replace(/^#\/?/,''))===h&&!document.activeElement.matches('input,textarea'))route(true)});
   if(h==='mes')vMes();else if(h==='obs')vObs();else if(h==='admin')vAdmin();else if(h==='instalar')vInstalar();else if(h==='buscar')vBuscar();else if(h==='todos')vTodos();else if(h==='marcas')vMarcas();
   else if(h.startsWith('marca/'))vMarca(h.slice(6));else if(h.startsWith('local/'))vLocal(h.slice(6));else vInicio();
 }
-document.addEventListener('click',async e=>{const ab=e.target.closest('[data-acc]');if(ab){setAcc(ab.dataset.acc,ab.dataset.v);return}
-  if(e.target.closest('[data-unlock]')){const k=prompt('Escribe la clave de contactos (solo una vez):');if(k&&await abrirContactos(k,false))route();return}
+document.addEventListener('click',async e=>{const tg=e.target.closest('[data-tg]');if(tg){toggleLoc(tg.closest('.loc'));return}
+  const ab=e.target.closest('[data-acc]');if(ab){setAcc(ab.dataset.acc,ab.dataset.v);return}
+  if(e.target.closest('[data-unlock]')){const k=prompt('Escribe la clave de contactos (solo una vez):');if(k&&await abrirContactos(k,false))refreshOpen();return}
   const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;
   if(g==='back'){history.length>1?history.back():(location.hash='')}else if(g==='')location.hash='';else location.hash='#/'+g.split('/').map((x,i)=>i?encodeURIComponent(decodeURIComponent(x)):x).join('/')});
 window.addEventListener('hashchange',()=>route());
@@ -315,7 +361,8 @@ document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset
   clearTimeout(tms[k]);tms[k]=setTimeout(async()=>{let ok=saveObs();let msg=ok?'✓ guardado':'no se pudo guardar';
     if(SHARED){try{await api('POST',{action:'put',id:k,text:v.trim()?v:''});if(OBS[k])delete OBS[k].p;saveObs();msg='✓ enviada a Alejandro'}catch(er){msg='guardada en tu celular, se enviará cuando haya internet'}}
     const el=[...document.querySelectorAll('[data-sv]')].find(x=>x.dataset.sv===k);if(el){el.textContent=msg;const od=[...document.querySelectorAll('[data-od]')].find(x=>x.dataset.od===k);if(od)od.textContent=OBS[k]?'escrita '+fdate(OBS[k].d):'';setTimeout(()=>{el.textContent=''},3500)}},500)});
-try{const gk=localStorage.getItem('kfc_clave');if(gk&&CIFRADO)abrirContactos(gk,true).then(ok=>{if(ok)route()})}catch(e){}
+try{const gk=localStorage.getItem('kfc_clave');if(gk&&CIFRADO)abrirContactos(gk,true).then(ok=>{if(ok)refreshOpen()})}catch(e){}
+try{const lr=localStorage.getItem('kfc_last');if(lr&&/^(#\/?)?$/.test(location.hash))history.replaceState(null,'','#/'+lr.split('/').map(encodeURIComponent).join('/'))}catch(e){}
 route();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 $('#ver').textContent='v'+APP_V;
