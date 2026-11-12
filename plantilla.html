@@ -38,6 +38,10 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 .acc b.si{background:#d9f2e3;color:#157347}.acc b.no{background:#fbdcdc;color:#a11d1d}.acc b.q{background:#fdecc8;color:#8a5a00}
 .lx label{display:block;font-size:12px;font-weight:700;color:#6b4e00;text-transform:uppercase;margin-bottom:3px}
 .lx textarea{width:100%;min-height:48px;border:1px solid #e0cf9a;border-radius:8px;padding:8px 10px;font:inherit;font-size:15px;resize:vertical;background:#fff}
+.accb{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
+.accb button{border:2px solid #d4c58f;background:#fff;color:#5b4a00;border-radius:999px;padding:3px 14px;font-size:14px;font-weight:700;cursor:pointer;min-width:46px}
+.accb button.on.si{background:#157347;border-color:#157347;color:#fff}.accb button.on.no{background:#a11d1d;border-color:#a11d1d;color:#fff}.accb button.on.q{background:#8a5a00;border-color:#8a5a00;color:#fff}
+.accn{font-size:12px;color:#6b4e00;font-weight:500;margin-left:6px}
 .sv{font-size:11px;color:#157347;margin-left:8px;font-weight:600}
 .empty{text-align:center;color:var(--mut);padding:50px 10px;font-size:17px}
 .foot{color:var(--mut);font-size:12px;text-align:center;margin-top:22px}
@@ -74,7 +78,7 @@ main{max-width:1100px;margin:0 auto;padding:8px 10px 50px}
 .stp{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;font-size:17px;line-height:1.7}
 .od{color:var(--mut);font-size:12px;font-weight:500;margin-left:6px;text-transform:none}
 .it .pv{display:block;color:#4b3b00;background:#fff8e8;border-radius:8px;padding:6px 8px;margin-top:6px;font-size:14px;white-space:pre-wrap}
-.ver{position:fixed;right:8px;bottom:8px;background:rgba(29,35,48,.82);color:#fff;font-size:12px;padding:4px 10px;border-radius:999px;z-index:30;pointer-events:none}
+.ver{position:fixed;right:6px;bottom:calc(6px + env(safe-area-inset-bottom,0px));background:rgba(29,35,48,.7);color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;z-index:2147483647;pointer-events:none}
 @media print{.ver{display:none}}
 </style>
 </head>
@@ -122,6 +126,20 @@ async function pull(){
     const ch=JSON.stringify(nu)!==JSON.stringify(OBS);OBS=nu;saveObs();return ch;
   }catch(e){return false}
 }
+const accBase=l=>l.acc||'?';
+const accOv=l=>{const o=OBS['ACC_'+l.id];return o&&o.t?o.t:null};
+const accVal=l=>accOv(l)||accBase(l);
+function accHtml(l){const v=accVal(l),ov=accOv(l)!==null&&accOv(l)!==accBase(l);
+  const b=(x,t,c)=>`<button data-acc="${esc(l.id)}" data-v="${x}" class="${c}${v===x?' on':''}">${t}</button>`;
+  return `<div class="acc">Acc. distancia:<span class="accb">${b('SI','Sí','si')}${b('NO','No','no')}${b('?','?','q')}</span><span class="accn" data-accn="${esc(l.id)}">${ov?'(pendiente de confirmar)':''}</span></div>`}
+async function setAcc(id,v){
+  const l=byId[id];if(!l)return;const k='ACC_'+id;
+  if(v===accBase(l))delete OBS[k];else OBS[k]={t:v,d:new Date().toISOString(),p:SHARED?1:undefined};
+  saveObs();
+  document.querySelectorAll('[data-acc="'+id.replace(/"/g,'')+'"]').forEach(b=>b.classList.toggle('on',b.dataset.v===accVal(l)));
+  document.querySelectorAll('[data-accn="'+id.replace(/"/g,'')+'"]').forEach(n=>n.textContent=accOv(l)!==null?'(pendiente de confirmar)':'');
+  if(SHARED){try{await api('POST',{action:'put',id:k,text:OBS[k]?OBS[k].t:''});if(OBS[k])delete OBS[k].p;saveObs()}catch(e){}}
+}
 const okey=l=>l.codigo==='PENDIENTE'?l.nombre:l.codigo;
 E.forEach(r=>{let l=idx[r[2]];if(!l){l=idx[r[2]]={marca:r[0],codigo:r[1],nombre:r[2],mes:r[3],acc:(DATA.acc||{})[r[2]]||'?',ext:[]};locs.push(l)}
   l.ext.push({u:r[4],t:r[5],c:r[6],y:[r[7],r[8],r[9],r[10]],b:norm([r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]].join(' '))})});
@@ -163,7 +181,7 @@ function ctBlock(l){
 function cardLocal(l,rows){
   rows=rows||l.ext;
   return `<section class="loc"><div class="lh"><span>${esc(l.nombre)}</span><span>${esc(tc(l.marca))} · ${tc(l.mes)}</span></div>
-  <div class="lx"><div class="acc">Acc. distancia:<b class="${l.acc==='SI'?'si':l.acc==='NO'?'no':'q'}">${l.acc==='SI'?'SÍ':l.acc}</b></div><label for="o_${esc(l.id)}">Observación <span class="od" data-od="${esc(l.id)}">${OBS[l.id]&&OBS[l.id].d?'escrita '+fdate(OBS[l.id].d):''}</span> <span class="sv" data-sv="${esc(l.id)}"></span></label><textarea id="o_${esc(l.id)}" data-k="${esc(l.id)}" placeholder="Escribe aquí una observación para este local…">${esc((OBS[l.id]||{}).t||'')}</textarea></div>
+  <div class="lx">${accHtml(l)}<label for="o_${esc(l.id)}">Observación <span class="od" data-od="${esc(l.id)}">${OBS[l.id]&&OBS[l.id].d?'escrita '+fdate(OBS[l.id].d):''}</span> <span class="sv" data-sv="${esc(l.id)}"></span></label><textarea id="o_${esc(l.id)}" data-k="${esc(l.id)}" placeholder="Escribe aquí una observación para este local…">${esc((OBS[l.id]||{}).t||'')}</textarea></div>
   ${ctBlock(l)}
   <div class="row hd"><span>Ubicación</span><span class="c">Tipo</span><span class="c">Capacidad</span><span class="c">Últ. recarga</span><span class="c">Mant. 1</span><span class="c">Mant. 2</span><span class="c">Próx. recarga</span></div>`+
   rows.map(e=>`<div class="row"><span class="u">${esc(e.u)||'<span class="mut">sin ubicación</span>'}</span><span class="t">${esc(e.t)} ${esc(e.c)}</span><span class="c d">${esc(e.t)}</span><span class="c d">${esc(e.c)}</span><span class="c d">${e.y[0]}</span><span class="c d">${e.y[1]}</span><span class="c d">${e.y[2]}</span><span class="c d">${e.y[3]}</span><span class="y">Últ. recarga ${e.y[0]} · Mant. ${e.y[1]} y ${e.y[2]} · Próx. recarga <b>${e.y[3]}</b></span></div>`).join('')+`</section>`;
@@ -186,7 +204,7 @@ function instBlock(){
 function vInicio(){
   $('#bar').innerHTML='';$('#count').textContent='';
   const nm=locs.filter(l=>l.mes===MES_ACT).length;
-  const no=Object.keys(OBS).filter(k=>OBS[k]&&OBS[k].t).length;
+  const no=Object.keys(OBS).filter(k=>OBS[k]&&OBS[k].t&&byId[k]).length;
   $('#main').innerHTML=`<div class="home">${instBlock()}
     <button class="big" data-go="buscar"><span class="ic">🔍</span><b>Buscar un local</b><small>Escribe el nombre y aparece</small></button>
     <button class="big" data-go="mes"><span class="ic">📅</span><b>Locales de este mes</b><small>${tc(MES_ACT)} · ${nm} ${nm==1?'local':'locales'}</small></button>
@@ -215,7 +233,7 @@ async function vAdmin(){
     let j;try{j=await api('GET')}catch(e){$('#main').innerHTML='<div class="empty">No se pudo conectar.</div>';return}
     const items=Object.entries(j.items||{}).sort((a,b)=>String(b[1].d).localeCompare(String(a[1].d)));
     $('#count').textContent=items.length?`${items.length} pendientes`:'';
-    $('#main').innerHTML=items.length?items.map(([k,o])=>`<div class="it" style="cursor:default"><b>${esc((byId[k]||{}).nombre||k)}</b><small>${o.d?'escrita '+fdate(o.d):''}</small><span class="pv">${esc(o.t)}</span><button class="btnres" data-res="${esc(k)}" style="margin-top:8px;background:#157347;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:15px;cursor:pointer">✔ Resuelta (borrar)</button></div>`).join(''):'<div class="empty">No hay observaciones pendientes. 🎉</div>';
+    $('#main').innerHTML=items.length?items.map(([k,o])=>{const isA=k.startsWith('ACC_');const lk=isA?k.slice(4):k;const txt=isA?'Acc. distancia: '+(o.t==='SI'?'SÍ':o.t)+'  (cámbialo en el Excel, columna ACC_DISTANCIA)':o.t;return `<div class="it" style="cursor:default"><b>${esc((byId[lk]||{}).nombre||lk)}</b><small>${o.d?(isA?'marcado ':'escrita ')+fdate(o.d):''}</small><span class="pv">${esc(txt)}</span><button class="btnres" data-res="${esc(k)}" style="margin-top:8px;background:#157347;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:15px;cursor:pointer">✔ Resuelta (borrar)</button></div>`}).join(''):'<div class="empty">No hay observaciones pendientes. 🎉</div>';
   };
   $('#main').onclick=async e=>{const b=e.target.closest('[data-res]');if(!b)return;
     if(!pin){pin=prompt('PIN de administrador:')||'';if(!pin)return}
@@ -286,7 +304,8 @@ async function route(skipPull){
   if(h==='mes')vMes();else if(h==='obs')vObs();else if(h==='admin')vAdmin();else if(h==='instalar')vInstalar();else if(h==='buscar')vBuscar();else if(h==='todos')vTodos();else if(h==='marcas')vMarcas();
   else if(h.startsWith('marca/'))vMarca(h.slice(6));else if(h.startsWith('local/'))vLocal(h.slice(6));else vInicio();
 }
-document.addEventListener('click',async e=>{if(e.target.closest('[data-unlock]')){const k=prompt('Escribe la clave de contactos (solo una vez):');if(k&&await abrirContactos(k,false))route();return}
+document.addEventListener('click',async e=>{const ab=e.target.closest('[data-acc]');if(ab){setAcc(ab.dataset.acc,ab.dataset.v);return}
+  if(e.target.closest('[data-unlock]')){const k=prompt('Escribe la clave de contactos (solo una vez):');if(k&&await abrirContactos(k,false))route();return}
   const b=e.target.closest('[data-go]');if(!b)return;const g=b.dataset.go;
   if(g==='back'){history.length>1?history.back():(location.hash='')}else if(g==='')location.hash='';else location.hash='#/'+g.split('/').map((x,i)=>i?encodeURIComponent(decodeURIComponent(x)):x).join('/')});
 window.addEventListener('hashchange',()=>route());
@@ -299,7 +318,8 @@ document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset
 try{const gk=localStorage.getItem('kfc_clave');if(gk&&CIFRADO)abrirContactos(gk,true).then(ok=>{if(ok)route()})}catch(e){}
 route();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-$('#ver').textContent='Versión '+APP_V;
+$('#ver').textContent='v'+APP_V;
+$('#sub').textContent+=' · v'+APP_V;
 try{fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
   const m=t.match(/const APP_V = (\d+)/);
   if(m&&+m[1]>APP_V&&!sessionStorage.getItem('kfc_rl_'+m[1])){sessionStorage.setItem('kfc_rl_'+m[1],'1');location.replace(location.pathname+'?v='+m[1]+location.hash)}
