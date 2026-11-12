@@ -136,14 +136,14 @@ let CONT=null;
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function descifrar(clave){
   const raw=b64(CIFRADO),salt=raw.slice(0,16),iv=raw.slice(16,28),ct=raw.slice(28);
-  const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(clave.trim()),'PBKDF2',false,['deriveKey']);
+  const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(String(clave).toLowerCase().replace(/\s+/g,'')),'PBKDF2',false,['deriveKey']);
   const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
   const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
   return JSON.parse(new TextDecoder().decode(pt));
 }
 async function abrirContactos(clave,silencioso){
-  try{CONT=await descifrar(clave);try{localStorage.setItem('kfc_clave',clave.trim())}catch(e){}return true}
-  catch(e){CONT=null;if(!silencioso)alert('La clave no es correcta. Pídesela a Alejandro.');try{if(silencioso)localStorage.removeItem('kfc_clave')}catch(e){}return false}
+  try{CONT=await descifrar(clave);try{localStorage.setItem('kfc_clave',String(clave).toLowerCase().replace(/\s+/g,''))}catch(e){}return true}
+  catch(e){CONT=null;if(!silencioso)alert('La clave no es correcta. Revisa que no estén las MAYÚSCULAS activadas, o abre el enlace que te mandó Alejandro.');try{if(silencioso)localStorage.removeItem('kfc_clave')}catch(e){}return false}
 }
 const tel=t=>t?`<a href="tel:${esc(t.replace(/[^\d+]/g,''))}">${esc(t)}</a>`:'';
 const mail=m=>m?`<a href="mailto:${esc(m)}">${esc(m)}</a>`:'';
