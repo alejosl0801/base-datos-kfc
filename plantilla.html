@@ -184,7 +184,7 @@ $('#sub').textContent=`${locs.length} locales · ${E.length} extintores · actua
 
 
 // ---- contactos cifrados (clave una sola vez por aparato)
-let CONT=null;
+let CONT=DATA.cont||null;
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function descifrar(clave){
   const raw=b64(CIFRADO),salt=raw.slice(0,16),iv=raw.slice(16,28),ct=raw.slice(28);
@@ -209,7 +209,7 @@ async function abrirContactos(clave,silencioso){
 const tel=t=>t?`<a href="tel:${esc(t.replace(/[^\d+]/g,''))}">${esc(t)}</a>`:'';
 const mail=m=>m?`<a href="mailto:${esc(m)}">${esc(m)}</a>`:'';
 function ctBlock(l){
-  if(!CIFRADO)return'';
+  if(!CIFRADO&&!CONT)return'';
   if(!CONT)return `<div class="ct"><button data-unlock="1">🔒 Ver datos de contacto del local</button></div>`;
   const c=CONT[l.id];
   if(!c)return `<div class="ct"><h4>Datos de contacto</h4><span class="k">No hay datos de contacto de este local.</span></div>`;

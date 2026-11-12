@@ -179,9 +179,14 @@ if os.path.exists(CLAVE):
 
 cfg_path = os.path.join(AQUI, 'config.json')
 cfg = json.load(open(cfg_path)) if os.path.exists(cfg_path) else {'obs_url': '', 'app_key': ''}
+abiertos = bool(cfg.pop('contactos_abiertos', False))
+if abiertos:
+    cc = ''
 
 mtime = datetime.datetime.fromtimestamp(os.path.getmtime(XLSX))
 datos = {'actualizado': mtime.strftime('%d/%m/%Y %H:%M'), 'acc': acc, 'sec': sec, 'cfg': cfg, 'extintores': filas}
+if abiertos:
+    datos['cont'] = cont
 js = json.dumps(datos, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
 
 plantilla = open(PLANTILLA, encoding='utf-8').read()
