@@ -92,11 +92,13 @@ def contactos():
         hr = h1.get(k)
         if k in gerentes and (gerentes[k][0] or gerentes[k][1]):
             n, e = gerentes[k]
-            rec['g'] = {'n': n, 'e': e, 't': tel_por_correo.get(e.lower(), '')}
+            rec['g'] = {'n': n, 'e': e}
         else:
             ja = tit((hr[7] if hr else None) or (row[20] if row else None))
             if ja:
-                rec['g'] = {'n': ja, 'e': str(row[10] or '').strip() if row else '', 't': str(row[11] or '').strip() if row else ''}
+                rec['g'] = {'n': ja, 'e': ''}
+        if row and str(row[11] or '').strip():
+            rec['tl'] = str(row[11]).strip()
         if row:
             if row[6]:
                 rec['rg'] = tit(row[6])
